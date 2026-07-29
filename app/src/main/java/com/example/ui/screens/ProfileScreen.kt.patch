@@ -1,0 +1,22 @@
+--- app/src/main/java/com/example/ui/screens/ProfileScreen.kt
++++ app/src/main/java/com/example/ui/screens/ProfileScreen.kt
+@@ -140,16 +140,6 @@
+             
+             Spacer(modifier = Modifier.height(16.dp))
+             StatsSection()
+-            
+-            Spacer(modifier = Modifier.height(32.dp))
+-            
+-            Button(
+-                onClick = { 
+-                    val updatedProfile = profile.copy(totalXp = profile.totalXp + 50)
+-                    viewModel.updateProfile(updatedProfile)
+-                },
+-                modifier = Modifier.fillMaxWidth(),
+-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+-            ) {
+-                Text("Simulate Lesson (+50 XP)")
+-            }
+             
+             Spacer(modifier = Modifier.height(32.dp))
+         }

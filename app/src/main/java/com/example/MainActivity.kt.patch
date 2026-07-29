@@ -1,0 +1,54 @@
+--- app/src/main/java/com/example/MainActivity.kt
++++ app/src/main/java/com/example/MainActivity.kt
+@@ -23,9 +23,20 @@
+ import com.example.ui.theme.LexiCoreTheme
+ import com.example.viewmodel.LexiViewModel
++import com.razorpay.Checkout
++import com.razorpay.PaymentData
++import com.razorpay.PaymentResultWithDataListener
++import org.json.JSONObject
++import android.widget.Toast
+ 
+-class MainActivity : ComponentActivity() {
++class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
++
++    var onPaymentSuccessCallback: (() -> Unit)? = null
++    var onPaymentErrorCallback: ((String) -> Unit)? = null
++
+     override fun onCreate(savedInstanceState: Bundle?) {
+         super.onCreate(savedInstanceState)
++        Checkout.preload(applicationContext)
+         enableEdgeToEdge()
+         setContent {
+             LexiCoreTheme {
+@@ -43,4 +54,30 @@
+             }
+         }
+     }
++
++    override fun onPaymentSuccess(razorpayPaymentID: String?, paymentData: PaymentData?) {
++        onPaymentSuccessCallback?.invoke()
++    }
++
++    override fun onPaymentError(code: Int, response: String?, paymentData: PaymentData?) {
++        onPaymentErrorCallback?.invoke(response ?: "Payment failed")
++    }
++    
++    fun startPayment(amount: Int, onSuccess: () -> Unit, onError: (String) -> Unit) {
++        onPaymentSuccessCallback = onSuccess
++        onPaymentErrorCallback = onError
++        val checkout = Checkout()
++        checkout.setKeyID(BuildConfig.RAZORPAY_API_KEY)
++        try {
++            val options = JSONObject()
++            options.put("name", "Xevrino Pro")
++            options.put("description", "Premium Subscription")
++            options.put("currency", "INR")
++            options.put("amount", amount * 100) // in paise
++            options.put("theme.color", "#6B4EE6")
++            checkout.open(this, options)
++        } catch (e: Exception) {
++            onError(e.message ?: "Error launching payment")
++        }
++    }
+ }

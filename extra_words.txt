@@ -1,0 +1,442 @@
+
+        WordObject(
+            word = "FSample",
+            phonetic = "/fæmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter F.", "This is a FSample.")
+            ),
+            collocations = listOf("good FSample"),
+            idioms = listOf(),
+            formalUsage = "This FSample is formal.",
+            informalUsage = "This FSample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "FSample",
+                paraphraseChallenge = "Explain F."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "GSample",
+            phonetic = "/gæmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter G.", "This is a GSample.")
+            ),
+            collocations = listOf("good GSample"),
+            idioms = listOf(),
+            formalUsage = "This GSample is formal.",
+            informalUsage = "This GSample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "GSample",
+                paraphraseChallenge = "Explain G."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "HSample",
+            phonetic = "/hæmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter H.", "This is a HSample.")
+            ),
+            collocations = listOf("good HSample"),
+            idioms = listOf(),
+            formalUsage = "This HSample is formal.",
+            informalUsage = "This HSample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "HSample",
+                paraphraseChallenge = "Explain H."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "ISample",
+            phonetic = "/iæmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter I.", "This is a ISample.")
+            ),
+            collocations = listOf("good ISample"),
+            idioms = listOf(),
+            formalUsage = "This ISample is formal.",
+            informalUsage = "This ISample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "ISample",
+                paraphraseChallenge = "Explain I."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "JSample",
+            phonetic = "/jæmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter J.", "This is a JSample.")
+            ),
+            collocations = listOf("good JSample"),
+            idioms = listOf(),
+            formalUsage = "This JSample is formal.",
+            informalUsage = "This JSample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "JSample",
+                paraphraseChallenge = "Explain J."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "KSample",
+            phonetic = "/kæmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter K.", "This is a KSample.")
+            ),
+            collocations = listOf("good KSample"),
+            idioms = listOf(),
+            formalUsage = "This KSample is formal.",
+            informalUsage = "This KSample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "KSample",
+                paraphraseChallenge = "Explain K."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "LSample",
+            phonetic = "/læmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter L.", "This is a LSample.")
+            ),
+            collocations = listOf("good LSample"),
+            idioms = listOf(),
+            formalUsage = "This LSample is formal.",
+            informalUsage = "This LSample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "LSample",
+                paraphraseChallenge = "Explain L."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "MSample",
+            phonetic = "/mæmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter M.", "This is a MSample.")
+            ),
+            collocations = listOf("good MSample"),
+            idioms = listOf(),
+            formalUsage = "This MSample is formal.",
+            informalUsage = "This MSample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "MSample",
+                paraphraseChallenge = "Explain M."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "NSample",
+            phonetic = "/næmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter N.", "This is a NSample.")
+            ),
+            collocations = listOf("good NSample"),
+            idioms = listOf(),
+            formalUsage = "This NSample is formal.",
+            informalUsage = "This NSample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "NSample",
+                paraphraseChallenge = "Explain N."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "OSample",
+            phonetic = "/oæmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter O.", "This is a OSample.")
+            ),
+            collocations = listOf("good OSample"),
+            idioms = listOf(),
+            formalUsage = "This OSample is formal.",
+            informalUsage = "This OSample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "OSample",
+                paraphraseChallenge = "Explain O."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "PSample",
+            phonetic = "/pæmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter P.", "This is a PSample.")
+            ),
+            collocations = listOf("good PSample"),
+            idioms = listOf(),
+            formalUsage = "This PSample is formal.",
+            informalUsage = "This PSample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "PSample",
+                paraphraseChallenge = "Explain P."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "QSample",
+            phonetic = "/qæmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter Q.", "This is a QSample.")
+            ),
+            collocations = listOf("good QSample"),
+            idioms = listOf(),
+            formalUsage = "This QSample is formal.",
+            informalUsage = "This QSample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "QSample",
+                paraphraseChallenge = "Explain Q."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "RSample",
+            phonetic = "/ræmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter R.", "This is a RSample.")
+            ),
+            collocations = listOf("good RSample"),
+            idioms = listOf(),
+            formalUsage = "This RSample is formal.",
+            informalUsage = "This RSample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "RSample",
+                paraphraseChallenge = "Explain R."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "SSample",
+            phonetic = "/sæmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter S.", "This is a SSample.")
+            ),
+            collocations = listOf("good SSample"),
+            idioms = listOf(),
+            formalUsage = "This SSample is formal.",
+            informalUsage = "This SSample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "SSample",
+                paraphraseChallenge = "Explain S."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "TSample",
+            phonetic = "/tæmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter T.", "This is a TSample.")
+            ),
+            collocations = listOf("good TSample"),
+            idioms = listOf(),
+            formalUsage = "This TSample is formal.",
+            informalUsage = "This TSample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "TSample",
+                paraphraseChallenge = "Explain T."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "USample",
+            phonetic = "/uæmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter U.", "This is a USample.")
+            ),
+            collocations = listOf("good USample"),
+            idioms = listOf(),
+            formalUsage = "This USample is formal.",
+            informalUsage = "This USample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "USample",
+                paraphraseChallenge = "Explain U."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "VSample",
+            phonetic = "/væmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter V.", "This is a VSample.")
+            ),
+            collocations = listOf("good VSample"),
+            idioms = listOf(),
+            formalUsage = "This VSample is formal.",
+            informalUsage = "This VSample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "VSample",
+                paraphraseChallenge = "Explain V."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "WSample",
+            phonetic = "/wæmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter W.", "This is a WSample.")
+            ),
+            collocations = listOf("good WSample"),
+            idioms = listOf(),
+            formalUsage = "This WSample is formal.",
+            informalUsage = "This WSample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "WSample",
+                paraphraseChallenge = "Explain W."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "XSample",
+            phonetic = "/xæmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter X.", "This is a XSample.")
+            ),
+            collocations = listOf("good XSample"),
+            idioms = listOf(),
+            formalUsage = "This XSample is formal.",
+            informalUsage = "This XSample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "XSample",
+                paraphraseChallenge = "Explain X."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "YSample",
+            phonetic = "/yæmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter Y.", "This is a YSample.")
+            ),
+            collocations = listOf("good YSample"),
+            idioms = listOf(),
+            formalUsage = "This YSample is formal.",
+            informalUsage = "This YSample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "YSample",
+                paraphraseChallenge = "Explain Y."
+            ),
+            category = "Casual"
+        ),
+        WordObject(
+            word = "ZSample",
+            phonetic = "/zæmpəl/",
+            partOfSpeech = "Noun",
+            definitions = listOf(
+                Definition("A sample word for letter Z.", "This is a ZSample.")
+            ),
+            collocations = listOf("good ZSample"),
+            idioms = listOf(),
+            formalUsage = "This ZSample is formal.",
+            informalUsage = "This ZSample is informal.",
+            slangUsage = "slang",
+            memoryHook = "hook",
+            physicalAction = "action",
+            mastery = MasteryExercise(
+                fillInTheBlank = "This is a _____.",
+                answer = "ZSample",
+                paraphraseChallenge = "Explain Z."
+            ),
+            category = "Casual"
+        )

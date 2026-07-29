@@ -1,0 +1,28 @@
+--- app/src/main/java/com/example/ui/screens/StoryReadingScreen.kt
++++ app/src/main/java/com/example/ui/screens/StoryReadingScreen.kt
+@@ -37,6 +37,21 @@
+ import kotlinx.coroutines.launch
+ import java.util.Locale
+ 
++fun levenshteinDistance(lhs: CharSequence, rhs: CharSequence): Int {
++    val len0 = lhs.length + 1
++    val len1 = rhs.length + 1
++    var cost = IntArray(len0)
++    var newcost = IntArray(len0)
++    for (i in 0 until len0) cost[i] = i
++    for (j in 1 until len1) {
++        newcost[0] = j
++        for (i in 1 until len0) {
++            val match = if (lhs[i - 1] == rhs[j - 1]) 0 else 1
++            val cost_replace = cost[i - 1] + match
++            val cost_insert = cost[i] + 1
++            val cost_delete = newcost[i - 1] + 1
++            newcost[i] = minOf(minOf(cost_insert, cost_delete), cost_replace)
++        }
++        val swap = cost; cost = newcost; newcost = swap
++    }
++    return cost[len0 - 1]
++}
++
+ @OptIn(ExperimentalMaterial3Api::class)
+ @Composable

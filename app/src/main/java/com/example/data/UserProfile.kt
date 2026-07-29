@@ -1,0 +1,24 @@
+package com.example.data
+
+data class UserProfile(
+    var id: String = "user_123",
+    var name: String = "John Student",
+    var initials: String = "JS",
+    var level: String = "Advanced Level (C1)",
+    var dayStreak: Int = 12,
+    var totalXp: Int = 8450,
+    var vocabularyProgress: Float = 0.8f,
+    var grammarProgress: Float = 0.65f,
+    var speakingProgress: Float = 0.45f,
+    var listeningProgress: Float = 0.9f,
+    var isAdmin: Boolean = false,
+    var isPremium: Boolean = false,
+    var unlockedCertificates: List<String> = emptyList(),
+    var certificationProgress: Float = 0f,
+    var notificationsEnabled: Boolean = true,
+    var dailyGoalMinutes: Int = 15,
+    var vocabularyHistory: List<Float> = listOf(20f, 45f, 55f, 80f, 120f, 150f, 210f),
+    var lessonHistory: List<Float> = listOf(5f, 12f, 10f, 25f, 22f, 30f),
+    var useFemaleVoice: Boolean = true,
+    var audioEnabled: Boolean = true
+)

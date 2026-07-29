@@ -1,0 +1,6 @@
+{
+  "name": "Xevrino",
+  "description": "Premium English Learning App designed for contextual immersion and native-level fluency.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

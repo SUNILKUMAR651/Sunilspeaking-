@@ -1,0 +1,11 @@
+--- app/src/main/java/com/example/viewmodel/LexiViewModel.kt
++++ app/src/main/java/com/example/viewmodel/LexiViewModel.kt
+@@ -118,6 +118,6 @@
+                     val newProfile = com.example.data.UserProfile(
+                         id = uid,
+-                        name = email.substringBefore("@"),
+-                        initials = email.substring(0, 1).uppercase(),
++                        name = name.ifBlank { email.substringBefore("@") },
++                        initials = name.ifBlank { email }.substring(0, 1).uppercase(),
+                         level = "Beginner Level (A1)",
+                         dayStreak = 0,
