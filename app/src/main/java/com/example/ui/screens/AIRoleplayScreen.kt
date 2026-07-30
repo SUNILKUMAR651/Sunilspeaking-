@@ -284,7 +284,7 @@ fun ActiveRoleplayScreen(scenario: RoleplayScenario, viewModel: LexiViewModel, o
         
         coroutineScope.launch {
             try {
-                val historyParts = newMessages.map { Content(listOf(Part(if(it.isUser) "User: ${it.text}" else "AI: ${it.text}"))) }
+                val historyParts = newMessages.map { Content(listOf(Part(it.text)), role = if(it.isUser) "user" else "model") }
                 
                 val request = GenerateContentRequest(
                     contents = historyParts,
@@ -293,7 +293,7 @@ fun ActiveRoleplayScreen(scenario: RoleplayScenario, viewModel: LexiViewModel, o
                 
                 val response = RetrofitClient.service.generateContent(BuildConfig.GEMINI_API_KEY, request)
                 val aiResponse = response.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "I didn't quite catch that."
-                val cleanResponse = aiResponse.replace(Regex("^(AI: )"), "")
+                val cleanResponse = aiResponse
                 
                 val finalMessages = newMessages + RoleplayMessage(cleanResponse, false)
                 messages = finalMessages

@@ -131,14 +131,14 @@ fun SidebarMenu(
                     iconBgColor = Color(0xFF58CC02),
                     title = "Native Language",
                     subtitle = "Your mother tongue",
-                    trailingText = "Hindi",
+                    trailingText = userProfile.nativeLanguage,
                     onClick = { }
                 )
                 HorizontalDivider(color = Color(0xFFF0F0F0))
                 SidebarItem(
                     icon = Icons.Filled.VerifiedUser,
                     iconBgColor = Color(0xFF8E9EFA),
-                    title = "English Level",
+                    title = "${userProfile.targetLanguage} Level",
                     subtitle = "Current proficiency",
                     trailingText = userProfile.level,
                     onClick = { }
@@ -164,6 +164,29 @@ fun SidebarMenu(
                     checked = userProfile.useFemaleVoice,
                     onCheckedChange = { isFemale ->
                         viewModel.updateProfile(userProfile.copy(useFemaleVoice = isFemale))
+                    }
+                )
+                HorizontalDivider(color = Color(0xFFF0F0F0))
+                
+                val currentTheme = userProfile.themePreference
+                val nextTheme = when(currentTheme) {
+                    "light" -> "dark"
+                    "dark" -> "system"
+                    else -> "light"
+                }
+                val themeLabel = when(currentTheme) {
+                    "light" -> "Light Mode"
+                    "dark" -> "Dark Mode"
+                    else -> "System Theme"
+                }
+                
+                SidebarItem(
+                    icon = Icons.Filled.DarkMode,
+                    iconBgColor = Color(0xFF6B4EE6),
+                    title = "App Theme",
+                    subtitle = "Current: $themeLabel",
+                    onClick = { 
+                        viewModel.updateProfile(userProfile.copy(themePreference = nextTheme))
                     }
                 )
             }

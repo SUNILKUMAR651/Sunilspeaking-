@@ -31,6 +31,9 @@ import androidx.compose.ui.unit.sp
 import com.example.viewmodel.LexiViewModel
 import kotlin.math.sin
 
+import com.example.data.database.LessonEntity
+
+
 data class PathLesson(
     val id: Int,
     val title: String,

@@ -40,17 +40,17 @@ data class SpeakingCategory(
 )
 
 val speakingCategories = listOf(
-    SpeakingCategory("job_interview", "Job Interview English Practice", "Guided interview role-play with confidence...", Icons.Filled.BusinessCenter, Color(0xFFF0F4FF), Color(0xFF4B72FF)),
+    SpeakingCategory("job_interview", "Job Interview Practice", "Guided interview role-play with confidence...", Icons.Filled.BusinessCenter, Color(0xFFF0F4FF), Color(0xFF4B72FF)),
     SpeakingCategory("hr_round", "HR Round Speaking Test", "Practice common HR speaking questions...", Icons.Filled.HeadsetMic, Color(0xFFFFF0F5), Color(0xFFFF528A)),
     SpeakingCategory("bpo_voice", "BPO / Call Center Voice Test", "Boost clarity for support calls with pronunciation...", Icons.Filled.HeadsetMic, Color(0xFFE8FAF0), Color(0xFF00C48C)),
     SpeakingCategory("oet_speaking", "OET Speaking (Nurses / Doctors)", "Healthcare speaking for professional medical...", Icons.Filled.LocalHospital, Color(0xFFFFF0F5), Color(0xFFFF4B4B)),
     SpeakingCategory("canada_pr", "Canada PR / IRCC Language Proof", "Prepare for Canadian language interviews and...", Icons.Filled.Language, Color(0xFFFFF0F0), Color(0xFFFF3333)),
-    SpeakingCategory("uk_visa", "UK Visa English Requirement Prep", "Confident responses for UK visa interviews...", Icons.Filled.Language, Color(0xFFF0F5FF), Color(0xFF3366FF)),
+    SpeakingCategory("uk_visa", "Visa Language Requirement Prep", "Confident responses for UK visa interviews...", Icons.Filled.Language, Color(0xFFF0F5FF), Color(0xFF3366FF)),
     SpeakingCategory("australia_pr", "Australia PR IELTS Prep", "IELTS speaking prep focused on Australian...", Icons.Filled.Language, Color(0xFFFFF8E1), Color(0xFFFFB300)),
     SpeakingCategory("sample_speaking", "Sample Speaking Test", "Train speaking prompts and timing under time...", Icons.Filled.ChatBubble, Color(0xFFE8FAF0), Color(0xFF00C48C)),
     SpeakingCategory("us_visa", "US Work Visa (H1B) Interview", "US work visa interview practice.", Icons.Filled.BusinessCenter, Color(0xFFF0F4FF), Color(0xFF4B72FF)),
     SpeakingCategory("university_admission", "University Admission Interview", "Admission interview speaking with structure.", Icons.Filled.School, Color(0xFFF5E8FF), Color(0xFF9C27B0)),
-    SpeakingCategory("mba_interview", "MBA Interview English Practice", "MBA interview speaking with confidence and...", Icons.Filled.BusinessCenter, Color(0xFFFFF3E0), Color(0xFFFF9800))
+    SpeakingCategory("mba_interview", "MBA Interview Practice", "MBA interview speaking with confidence and...", Icons.Filled.BusinessCenter, Color(0xFFFFF3E0), Color(0xFFFF9800))
 )
 
 @Composable

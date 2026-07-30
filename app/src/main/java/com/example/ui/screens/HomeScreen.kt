@@ -194,12 +194,40 @@ fun HomeScreen(
                     ) {
                         item {
                             GlassmorphicActionCard(
-                                title = "Speaking Practice",
-                                subtitle = "50+ scenarios",
-                                icon = Icons.Filled.RecordVoiceOver,
-                                accentColor = Color(0xFFFF9600),
+                                title = "Swipe Battle",
+                                subtitle = "Which is Right?",
+                                icon = Icons.Filled.Swipe,
+                                accentColor = Color(0xFFE91E63),
                                 modifier = Modifier.width(160.dp)
-                            ) { onNavigate("pro_practice") }
+                            ) { onNavigate("swipe_battle") }
+                        }
+                        item {
+                            GlassmorphicGameCard(
+                                title = "Bubble Pop",
+                                accentColor = Color(0xFFFF512F),
+                                icon = Icons.Filled.Games
+                            ) { onNavigate("bubble_pop") }
+                        }
+                        item {
+                            GlassmorphicGameCard(
+                                title = "Word Wheel",
+                                accentColor = Color(0xFF56AB2F),
+                                icon = Icons.Filled.DataExploration
+                            ) { onNavigate("word_wheel") }
+                        }
+                        item {
+                            GlassmorphicGameCard(
+                                title = "Audio Dictation",
+                                accentColor = Color(0xFF4776E6),
+                                icon = Icons.Filled.Audiotrack
+                            ) { onNavigate("audio_dictation") }
+                        }
+                        item {
+                            GlassmorphicGameCard(
+                                title = "Crossword",
+                                accentColor = Color(0xFF00C6FF),
+                                icon = Icons.Filled.Abc
+                            ) { onNavigate("crossword_connect") }
                         }
                         item {
                             GlassmorphicGameCard(
@@ -207,13 +235,6 @@ fun HomeScreen(
                                 accentColor = Color(0xFFE040FB),
                                 icon = Icons.Filled.TrendingUp
                             ) { onNavigate("weak_words") }
-                        }
-                        item {
-                            GlassmorphicGameCard(
-                                title = "Vocab Quiz",
-                                accentColor = Color(0xFFFF4081),
-                                icon = Icons.Filled.Style
-                            ) { onNavigate("vocabulary_quiz") }
                         }
                         item {
                             GlassmorphicGameCard(
@@ -239,24 +260,24 @@ fun HomeScreen(
                     val categories = listOf(
                         Triple("Basic Vocab", "150 words", Color(0xFFFF5252)),
                         Triple("A To Z Vocab", "1200 words", Color(0xFF69F0AE)),
-                        Triple("Business English", "400 words", Color(0xFF9C27B0)),
+                        Triple("Business ${userProfile.targetLanguage}", "400 words", Color(0xFF9C27B0)),
                         Triple("Job Interview", "200 words", Color(0xFF00BCD4)),
                         Triple("IT & Tech", "300 words", Color(0xFF3F51B5)),
                         Triple("News Vocab", "340 words", Color(0xFF448AFF)),
                         Triple("Travel & Tourism", "250 words", Color(0xFFFF9800)),
-                        Triple("Medical English", "180 words", Color(0xFFE91E63)),
+                        Triple("Medical ${userProfile.targetLanguage}", "180 words", Color(0xFFE91E63)),
                         Triple("Important Vocab", "500 words", Color(0xFFFFAB40)),
                         Triple("Daily Phrases", "600 phrases", Color(0xFF8BC34A)),
                         Triple("IELTS & TOEFL", "1500 words", Color(0xFFF44336)),
                         Triple("Slang & Idioms", "350 phrases", Color(0xFF9C27B0)),
-                        Triple("Movie English", "250 scenes", Color(0xFFE91E63)),
+                        Triple("Movie ${userProfile.targetLanguage}", "250 scenes", Color(0xFFE91E63)),
                         Triple("Phrasal Verbs", "400 verbs", Color(0xFF009688)),
                         Triple("Academic", "500 words", Color(0xFF795548)),
                         Triple("Email Writing", "150 templates", Color(0xFF607D8B))
                     )
                     
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        val premiumCategories = listOf("IELTS & TOEFL", "Business English", "Medical English", "Academic", "Movie English", "IT & Tech", "Email Writing")
+                        val premiumCategories = listOf("IELTS & TOEFL", "Business ${userProfile.targetLanguage}", "Medical ${userProfile.targetLanguage}", "Academic", "Movie ${userProfile.targetLanguage}", "IT & Tech", "Email Writing")
                         categories.chunked(2).forEach { rowCategories ->
                             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                 rowCategories.forEach { category ->

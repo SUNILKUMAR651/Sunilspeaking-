@@ -235,7 +235,7 @@ object LexiconDatabase {
                 answer = "synergy",
                 paraphraseChallenge = "We can accomplish much more if we combine our efforts instead of working separately."
             ),
-            category = "Business English"
+            category = "Business"
         ),
         WordObject(
             word = "Agile",
@@ -300,7 +300,7 @@ object LexiconDatabase {
                 answer = "prognosis",
                 paraphraseChallenge = "What is the expected outcome for this patient's condition?"
             ),
-            category = "Medical English"
+            category = "Medical"
         ),
         WordObject(
             word = "Leverage",

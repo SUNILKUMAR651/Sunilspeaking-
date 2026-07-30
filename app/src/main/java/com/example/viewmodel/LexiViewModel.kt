@@ -1,10 +1,14 @@
 package com.example.viewmodel
 
 import android.app.Application
+import java.io.File
+import android.net.Uri
+import com.google.firebase.storage.FirebaseStorage
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.WordObject
-import com.example.data.cache.OfflineCache
+import com.example.data.database.LexiDatabase
+import com.example.data.database.LessonEntity
 import com.example.data.repository.LexiRepository
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,8 +67,8 @@ class LexiViewModel(application: Application) : AndroidViewModel(application) {
     val isAdmin: StateFlow<Boolean> = _isAdmin.asStateFlow()
 
     init {
-        val offlineCache = OfflineCache(application)
-        repository = LexiRepository(offlineCache)
+        val database = LexiDatabase.getDatabase(application)
+        repository = LexiRepository(database.wordDao(), database.lessonDao())
         
         checkAuthStatus()
         
@@ -242,6 +246,12 @@ class LexiViewModel(application: Application) : AndroidViewModel(application) {
         initialValue = emptyList()
     )
 
+    val allLessons: StateFlow<List<LessonEntity>> = repository.allLessons.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
     val weakWords: StateFlow<List<WordObject>> = repository.getWeakWords().stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -297,7 +307,7 @@ class LexiViewModel(application: Application) : AndroidViewModel(application) {
             _isGenerating.value = true
             _aiGeneratedSentence.value = null
             
-            val result = repository.generateExampleSentence(word, _userInterest.value)
+            val result = repository.generateExampleSentence(word, _userInterest.value, _userProfile.value.targetLanguage)
             _aiGeneratedSentence.value = result.getOrElse { "Error: ${it.message}" }
             
             _isGenerating.value = false
@@ -311,6 +321,26 @@ class LexiViewModel(application: Application) : AndroidViewModel(application) {
     fun addWord(word: WordObject) {
         viewModelScope.launch {
             repository.insertWord(word)
+        }
+    }
+    
+    fun uploadRecording(file: File, sentence: String, score: Int) {
+        val user = auth.currentUser ?: return
+        val storage = FirebaseStorage.getInstance()
+        val ref = storage.reference.child("recordings/${user.uid}/${System.currentTimeMillis()}.3gp")
+        
+        ref.putFile(Uri.fromFile(file)).addOnSuccessListener {
+            ref.downloadUrl.addOnSuccessListener { uri ->
+                val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                val recordingData = mapOf(
+                    "url" to uri.toString(),
+                    "sentence" to sentence,
+                    "score" to score,
+                    "timestamp" to com.google.firebase.Timestamp.now()
+                )
+                db.collection("users").document(user.uid)
+                  .collection("recordings").add(recordingData)
+            }
         }
     }
     

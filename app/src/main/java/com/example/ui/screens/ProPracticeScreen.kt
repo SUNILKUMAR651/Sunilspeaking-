@@ -35,7 +35,7 @@ val practiceScenarios = listOf(
     PracticeScenario(6, "Travel", "Talk about places you have visited or want to go.", Color(0xFF1CB0F6)),
     PracticeScenario(7, "Work & Study", "Describe your job, studies, and career goals.", Color(0xFF00C4B4)),
     PracticeScenario(8, "Technology", "Talk about gadgets, apps, and how you use them.", Color(0xFF8E9EFA)),
-    PracticeScenario(9, "Shopping", "Practice useful English for stores, prices, and buying items.", Color(0xFF00C4B4)),
+    PracticeScenario(9, "Shopping", "Practice useful phrases for stores, prices, and buying items.", Color(0xFF00C4B4)),
     PracticeScenario(10, "Health & Wellness", "Talk about healthy habits, routines, and feeling better.", Color(0xFF1CB0F6)),
     PracticeScenario(11, "At the Pharmacy", "Ask for medicine and explain symptoms clearly.", Color(0xFF1CB0F6)),
     PracticeScenario(12, "Public Speaking", "Build confidence speaking to a group and presenting.", Color(0xFF8E9EFA)),

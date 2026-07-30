@@ -100,7 +100,7 @@ fun AuthScreen(viewModel: LexiViewModel, onAuthSuccess: () -> Unit) {
         )
         
         Text(
-            text = if (isLogin) "Sign in to continue your learning journey" else "Sign up to start mastering English",
+            text = if (isLogin) "Sign in to continue your learning journey" else "Sign up to start mastering a new language",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

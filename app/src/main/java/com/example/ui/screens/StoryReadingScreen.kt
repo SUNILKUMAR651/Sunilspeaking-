@@ -40,7 +40,7 @@ import java.util.Locale
 data class StoryLevel(val id: Int, val title: String, val content: String)
 
 val storyLevels = listOf(
-    StoryLevel(1, "Lesson 1: Introductions", "Hello, my name is John. I am a student. I like to learn English."),
+    StoryLevel(1, "Lesson 1: Introductions", "Hello, my name is John. I am a student. I like to learn new languages."),
     StoryLevel(2, "Lesson 2: At the Cafe", "I would like to order a cup of coffee and a piece of chocolate cake, please."),
     StoryLevel(3, "Lesson 3: The Weather", "Today the weather is very beautiful. The sun is shining brightly in the clear blue sky."),
     StoryLevel(4, "Lesson 4: Travel Plans", "Next week, I am traveling to Paris. I am very excited to see the Eiffel Tower and eat croissants."),

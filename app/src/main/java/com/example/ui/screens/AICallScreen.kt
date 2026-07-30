@@ -118,10 +118,10 @@ fun AICallScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
                     aiMessage = "Thinking..."
                     coroutineScope.launch {
                         try {
-                            val userContent = Content(listOf(Part("User: $text")))
+                            val userContent = Content(listOf(Part(text)), role = "user")
                             val newHistory = conversationHistory + userContent
                             
-                            val systemPrompt = "You are an English teacher having a voice call with a student. Keep your answers short, conversational, and helpful (max 2-3 sentences)."
+                            val systemPrompt = "You are a ${userProfile.targetLanguage} teacher having a voice call with a student whose native language is ${userProfile.nativeLanguage}. Keep your answers short, conversational, and helpful (max 2-3 sentences)."
                             
                             val request = GenerateContentRequest(
                                 contents = newHistory,
@@ -131,9 +131,9 @@ fun AICallScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
                             val responseObj = RetrofitClient.service.generateContent(BuildConfig.GEMINI_API_KEY, request)
                             val aiResponseText = responseObj.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "Sorry, I missed that."
                             
-                            val cleanResponse = aiResponseText.replace(Regex("^(Teacher: )"), "")
+                            val cleanResponse = aiResponseText
                             
-                            conversationHistory = newHistory + Content(listOf(Part("Teacher: $cleanResponse")))
+                            conversationHistory = newHistory + Content(listOf(Part(cleanResponse)), role = "model")
                             aiMessage = cleanResponse
                             
                             isSpeaking = true
@@ -187,9 +187,9 @@ fun AICallScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
                 
                 // initial greeting
                 coroutineScope.launch {
-                    val greeting = "Hello, I'm your AI English teacher. How can I help you today?"
+                    val greeting = "Hello, I'm your AI ${userProfile.targetLanguage} teacher. How can I help you today?"
                     aiMessage = greeting
-                    conversationHistory = listOf(Content(listOf(Part("Teacher: $greeting"))))
+                    conversationHistory = listOf(Content(listOf(Part(greeting)), role = "model"))
                     if (isFemaleVoice) tts.value?.setPitch(1.4f) else tts.value?.setPitch(0.7f)
                     tts.value?.speakWithVoice(greeting, userProfile.useFemaleVoice, "greeting")
                 }
@@ -232,7 +232,7 @@ fun AICallScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Spacer(modifier = Modifier.height(40.dp))
                 Text(
-                    text = "AI English Teacher",
+                    text = "AI ${userProfile.targetLanguage} Teacher",
                     color = Color.White,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold

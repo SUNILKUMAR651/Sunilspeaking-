@@ -5,6 +5,9 @@ data class UserProfile(
     var name: String = "John Student",
     var initials: String = "JS",
     var level: String = "Advanced Level (C1)",
+    var nativeLanguage: String = "Hindi",
+    var targetLanguage: String = "English",
+    var isOnboardingCompleted: Boolean = false,
     var dayStreak: Int = 12,
     var totalXp: Int = 8450,
     var vocabularyProgress: Float = 0.8f,
@@ -20,5 +23,6 @@ data class UserProfile(
     var vocabularyHistory: List<Float> = listOf(20f, 45f, 55f, 80f, 120f, 150f, 210f),
     var lessonHistory: List<Float> = listOf(5f, 12f, 10f, 25f, 22f, 30f),
     var useFemaleVoice: Boolean = true,
-    var audioEnabled: Boolean = true
+    var audioEnabled: Boolean = true,
+    var themePreference: String = "system"
 )

@@ -29,6 +29,7 @@ import com.example.viewmodel.LexiViewModel
 @Composable
 fun SettingsScreen(viewModel: LexiViewModel, onBack: () -> Unit, onNavigateToPremium: () -> Unit) {
     val userProfile by viewModel.userProfile.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     Scaffold(
         topBar = {
@@ -102,7 +103,7 @@ fun SettingsScreen(viewModel: LexiViewModel, onBack: () -> Unit, onNavigateToPre
                 SettingsItem(
                     icon = Icons.Filled.VerifiedUser,
                     iconBgColor = Color(0xFF8E9EFA),
-                    title = "English Level",
+                    title = "${userProfile.targetLanguage} Level",
                     subtitle = "Tap to choose your current level",
                     trailingText = "Advanced",
                     onClick = { }
@@ -124,6 +125,47 @@ fun SettingsScreen(viewModel: LexiViewModel, onBack: () -> Unit, onNavigateToPre
                     subtitle = "Tap to choose your learning objective",
                     trailingText = "Pass Exams",
                     onClick = { }
+                )
+                HorizontalDivider(color = Color(0xFFF0F0F0))
+                
+                SettingsToggleItem(
+                    icon = Icons.Filled.NotificationsActive,
+                    iconBgColor = Color(0xFFFF5252),
+                    title = "Daily Reminders",
+                    subtitle = "Get notified to complete your lesson",
+                    checked = userProfile.notificationsEnabled,
+                    onCheckedChange = { enabled ->
+                        viewModel.updateProfile(userProfile.copy(notificationsEnabled = enabled))
+                        if (enabled) {
+                            com.example.utils.NotificationHelper.scheduleDailyReminder(context, 18, 0)
+                        } else {
+                            com.example.utils.NotificationHelper.cancelReminder(context)
+                        }
+                    }
+                )
+                HorizontalDivider(color = Color(0xFFF0F0F0))
+                
+                val currentTheme = userProfile.themePreference
+                val nextTheme = when(currentTheme) {
+                    "light" -> "dark"
+                    "dark" -> "system"
+                    else -> "light"
+                }
+                val themeLabel = when(currentTheme) {
+                    "light" -> "Light"
+                    "dark" -> "Dark"
+                    else -> "System"
+                }
+                
+                SettingsItem(
+                    icon = Icons.Filled.DarkMode,
+                    iconBgColor = Color(0xFF6B4EE6),
+                    title = "App Theme",
+                    subtitle = "Tap to change theme",
+                    trailingText = themeLabel,
+                    onClick = { 
+                        viewModel.updateProfile(userProfile.copy(themePreference = nextTheme))
+                    }
                 )
             }
 
@@ -278,5 +320,65 @@ fun SettingsItem(
                 modifier = Modifier.size(24.dp)
             )
         }
+    }
+}
+
+@Composable
+fun SettingsToggleItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconBgColor: Color,
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) }
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = iconBgColor,
+            modifier = Modifier.size(40.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.width(16.dp))
+        
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title, 
+                fontSize = 16.sp, 
+                fontWeight = FontWeight.Bold, 
+                color = Color(0xFF4B4B4B)
+            )
+            Text(
+                text = subtitle, 
+                fontSize = 14.sp, 
+                color = Color.Gray
+            )
+        }
+        
+        androidx.compose.material3.Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = androidx.compose.material3.SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = Color(0xFF58CC02),
+                uncheckedThumbColor = Color.White,
+                uncheckedTrackColor = Color(0xFFE5E5E5)
+            )
+        )
     }
 }

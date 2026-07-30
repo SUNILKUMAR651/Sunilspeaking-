@@ -42,12 +42,26 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
         Checkout.preload(applicationContext)
         enableEdgeToEdge()
         setContent {
-            LexiCoreTheme {
-                val viewModel: LexiViewModel = viewModel()
+            val viewModel: LexiViewModel = viewModel()
+            val userProfile by viewModel.userProfile.collectAsState()
+            val darkTheme = when (userProfile.themePreference) {
+                "dark" -> true
+                "light" -> false
+                else -> androidx.compose.foundation.isSystemInDarkTheme()
+            }
+            LexiCoreTheme(darkTheme = darkTheme) {
                 val authStatus by viewModel.authStatus.collectAsState()
                 
                 if (authStatus is com.example.viewmodel.AuthStatus.Authenticated) {
-                    LexiApp(viewModel = viewModel)
+                    val userProfile by viewModel.userProfile.collectAsState()
+                    if (userProfile.isOnboardingCompleted) {
+                        LexiApp(viewModel = viewModel)
+                    } else {
+                        OnboardingScreen(
+                            viewModel = viewModel,
+                            onFinish = { }
+                        )
+                    }
                 } else {
                     AuthScreen(
                         viewModel = viewModel,
@@ -69,8 +83,17 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
     fun startPayment(amount: Int, onSuccess: () -> Unit, onError: (String) -> Unit) {
         onPaymentSuccessCallback = onSuccess
         onPaymentErrorCallback = onError
+        val apiKey = BuildConfig.RAZORPAY_API_KEY
+        if (apiKey.isEmpty() || apiKey == "MY_RAZORPAY_KEY" || apiKey == "rzp_test_mock") {
+            // Mock processing handler
+            Toast.makeText(this, "Processing Mock Payment...", Toast.LENGTH_SHORT).show()
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                onPaymentSuccess("mock_payment_id", null)
+            }, 1500)
+            return
+        }
         val checkout = Checkout()
-        checkout.setKeyID(BuildConfig.RAZORPAY_API_KEY)
+        checkout.setKeyID(apiKey)
         try {
             val options = JSONObject()
             options.put("name", "Xevrino Pro")
@@ -89,6 +112,28 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
 fun LexiApp(viewModel: LexiViewModel) {
     val navController = rememberNavController()
     var currentRoute by remember { mutableStateOf("home") }
+    
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            com.example.utils.NotificationHelper.scheduleDailyReminder(context, 18, 0) // 6 PM
+        }
+    }
+    
+    LaunchedEffect(Unit) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            val permission = androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS)
+            if (permission != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                com.example.utils.NotificationHelper.scheduleDailyReminder(context, 18, 0)
+            }
+        } else {
+            com.example.utils.NotificationHelper.scheduleDailyReminder(context, 18, 0)
+        }
+    }
     
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
@@ -549,8 +594,35 @@ fun LexiApp(viewModel: LexiViewModel) {
                 )
             }
 
+            composable("bubble_pop") {
+                BubblePopScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
+            }
+            
+            composable("crossword_connect") {
+                CrosswordConnectScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
+            }
+            
+            composable("swipe_battle") {
+                SwipeBattleScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
+            }
+            
+            composable("word_wheel") {
+                WordWheelScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
+            }
+            
+            composable("audio_dictation") {
+                AudioDictationScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
+            }
+            
             composable("weak_words") {
                 WeakWordsScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            
+            composable("pronunciation_history") {
+                PronunciationHistoryScreen(
                     viewModel = viewModel,
                     onBack = { navController.popBackStack() }
                 )

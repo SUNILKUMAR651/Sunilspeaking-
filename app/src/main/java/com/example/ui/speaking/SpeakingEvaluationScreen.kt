@@ -17,6 +17,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,6 +38,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import com.example.utils.AudioRecorder
+import java.io.File
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -81,6 +85,7 @@ fun SpeakingEvaluationScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
         }
     }
 
+    val audioRecorder = remember { AudioRecorder(context) }
     val speechRecognizer = remember { SpeechRecognizer.createSpeechRecognizer(context) }
     val speechRecognizerIntent = remember {
         Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
@@ -105,15 +110,53 @@ fun SpeakingEvaluationScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
             override fun onRmsChanged(rmsdB: Float) {}
             override fun onBufferReceived(buffer: ByteArray?) {}
             override fun onEndOfSpeech() { isRecording = false }
-            override fun onError(error: Int) { isRecording = false }
+            override fun onError(error: Int) { 
+                isRecording = false 
+                audioRecorder.stopRecording()
+            }
             override fun onResults(results: Bundle?) {
                 isRecording = false
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 if (!matches.isNullOrEmpty()) {
                     recognizedText = matches[0]
                     showResult = true
-                    // simple check for demo
-                    isSuccess = recognizedText.lowercase().contains("hello") || recognizedText.length > 5
+                    val targetWords = currentSentence.replace(Regex("[^a-zA-Z0-9 ]"), "").lowercase().split(" ").filter { it.isNotBlank() }
+                    val recognizedWordsList = recognizedText.replace(Regex("[^a-zA-Z0-9 ]"), "").lowercase().split(" ").filter { it.isNotBlank() }
+                    
+                    val matches = recognizedWordsList.count { targetWords.contains(it) }
+                    val score = if (targetWords.isEmpty()) 0 else (matches.toFloat() / targetWords.size * 100).toInt().coerceIn(0, 100)
+                    
+                    isSuccess = score >= 70
+                    
+                    val file = audioRecorder.stopRecording()
+                    if (file != null && file.exists()) {
+                        viewModel.uploadRecording(file, currentSentence, score)
+                    }
+                    
+                    // Add wrong words to Weak Words
+                    targetWords.forEach { word ->
+                        val cleanWord = word.replace(Regex("[^a-zA-Z0-9]"), "").lowercase()
+                        if (!recognizedWordsList.contains(cleanWord)) {
+                            viewModel.addWord(
+                                com.example.data.WordObject(
+                                    word = cleanWord,
+                                    phonetic = "",
+                                    partOfSpeech = "word",
+                                    definitions = listOf(com.example.data.Definition("Missed during speaking practice", "Sentence: $currentSentence")),
+                                    collocations = emptyList(),
+                                    idioms = emptyList(),
+                                    formalUsage = "",
+                                    informalUsage = "",
+                                    slangUsage = "",
+                                    memoryHook = "Practice pronunciation",
+                                    physicalAction = "",
+                                    mastery = com.example.data.MasteryExercise("", "", ""),
+                                    category = "Speaking Mistakes",
+                                    easinessFactor = 1.3f
+                                )
+                            )
+                        }
+                    }
                 }
             }
             override fun onPartialResults(partialResults: Bundle?) {}
@@ -246,13 +289,36 @@ fun SpeakingEvaluationScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
                 }
             }
         } else if (showResult) {
-            Text(
-                text = recognizedText,
-                fontSize = 18.sp,
-                color = if (isSuccess) Color(0xFF58CC02) else Color(0xFFFF4B4B),
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp).align(Alignment.CenterHorizontally),
-                fontWeight = FontWeight.Bold
-            )
+            Column(modifier = Modifier.padding(horizontal = 24.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(if (isSuccess) "Excellent!" else "Let's try again", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = if (isSuccess) Color(0xFF58CC02) else Color(0xFFFF4B4B))
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Show words with color coding
+                val targetWords = currentSentence.split(" ")
+                val recognizedWordsListChips = recognizedText.replace(Regex("[^a-zA-Z0-9 ]"), "").lowercase().split(" ").filter { it.isNotBlank() }
+                
+                @OptIn(ExperimentalLayoutApi::class)
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    targetWords.forEach { word ->
+                        val cleanWord = word.replace(Regex("[^a-zA-Z0-9]"), "").lowercase()
+                        val isSpoken = recognizedWordsListChips.contains(cleanWord)
+                        
+                        Surface(
+                            shape = RoundedCornerShape(24.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (isSpoken) Color(0xFF58CC02) else Color(0xFFFF4B4B)),
+                            color = if (isSpoken) Color(0xFFD7FFB8) else Color(0xFFFFE5E5)
+                        ) {
+                            Text(word, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (isSpoken) Color(0xFF58CC02) else Color(0xFFFF4B4B))
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("You said: $recognizedText", fontSize = 14.sp, color = Color.Gray, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
+            }
         }
         
         // Bottom Button
@@ -288,9 +354,11 @@ fun SpeakingEvaluationScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
                         }
                         if (isRecording) {
                             speechRecognizer.stopListening()
+                            audioRecorder.stopRecording()
                             isRecording = false
                         } else {
                             recognizedText = ""
+                            try { audioRecorder.startRecording() } catch (e: Exception) {}
                             speechRecognizer.startListening(speechRecognizerIntent)
                             isRecording = true
                         }

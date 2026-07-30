@@ -12,10 +12,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-@Database(entities = [WordObject::class], version = 2, exportSchema = false)
+@Database(entities = [WordObject::class, LessonEntity::class], version = 3, exportSchema = false)
 @TypeConverters(LexiTypeConverters::class)
 abstract class LexiDatabase : RoomDatabase() {
     abstract fun wordDao(): WordDao
+    abstract fun lessonDao(): LessonDao
 
     companion object {
         @Volatile
@@ -47,6 +48,15 @@ abstract class LexiDatabase : RoomDatabase() {
                     val dao = database.wordDao()
                     // Prepopulate with LexiconDatabase words
                     dao.insertWords(LexiconDatabase.words)
+                    
+                    val lessonDao = database.lessonDao()
+                    lessonDao.insertLessons(listOf(
+                        LessonEntity(1, "Introductions", "MEETING NEW PEOPLE", false),
+                        LessonEntity(2, "Colors", "BASIC COLORS", false),
+                        LessonEntity(3, "Numbers", "COUNTING NUMBERS", false),
+                        LessonEntity(4, "Family Members", "FAMILY MEMBERS", true),
+                        LessonEntity(5, "Animals", "COMMON ANIMALS", true)
+                    ))
                 }
             }
         }

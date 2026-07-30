@@ -98,7 +98,7 @@ fun PremiumSubscriptionScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
             PremiumFeatureRow("IELTS & TOEFL Mock Tests with Scoring")
             PremiumFeatureRow("Advanced Accent & Pitch Analysis Lab")
             PremiumFeatureRow("Real-time Grammar Correction in Scenarios")
-            PremiumFeatureRow("Business & Professional English Certification")
+            PremiumFeatureRow("Business & Professional Language Certification")
 
             Spacer(modifier = Modifier.height(32.dp))
 

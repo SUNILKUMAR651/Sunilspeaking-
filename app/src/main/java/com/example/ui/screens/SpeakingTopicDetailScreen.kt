@@ -40,7 +40,7 @@ val sampleJobTasks = listOf(
 
 @Composable
 fun SpeakingTopicDetailScreen(categoryId: String, onBack: () -> Unit, onNavigateToTask: (Int) -> Unit) {
-    val title = speakingCategories.find { it.id == categoryId }?.title ?: "Job Interview English Practice"
+    val title = speakingCategories.find { it.id == categoryId }?.title ?: "Job Interview Practice"
     
     Column(
         modifier = Modifier

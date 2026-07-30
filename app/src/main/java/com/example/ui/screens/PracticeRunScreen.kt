@@ -22,6 +22,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.viewmodel.LexiViewModel
+import android.Manifest
+import android.content.Intent
+import android.os.Bundle
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import android.content.pm.PackageManager
+import java.util.Locale
 import android.speech.tts.TextToSpeech
 import androidx.compose.ui.platform.LocalContext
 import com.example.utils.speakWithVoice
@@ -30,13 +41,14 @@ import com.example.utils.speakWithVoice
 @Composable
 fun PracticeRunScreen(lessonId: Int, viewModel: LexiViewModel, onBack: () -> Unit) {
     val userProfile by viewModel.userProfile.collectAsState()
-    val title = "${userProfile.name}'s practice run"
+    val displayName = userProfile.name.ifBlank { "User" }.split(" ").firstOrNull()?.replaceFirstChar { it.uppercase() } ?: "User"
+    val title = "${displayName}'s Practice Run"
     
     val sentences = remember {
         List(50) { index -> 
-            if (index == 0) "Hello, my name is ${userProfile.name}." 
+            if (index == 0) "Hello, my name is ${displayName}." 
             else if (index == 1) "I am happy to introduce myself."
-            else if (index == 2) "I am learning English every day."
+            else if (index == 2) "I am learning every day."
             else "This is practice sentence number ${index + 1}." 
         }
     }
@@ -44,6 +56,54 @@ fun PracticeRunScreen(lessonId: Int, viewModel: LexiViewModel, onBack: () -> Uni
     
     var tts by remember { mutableStateOf<TextToSpeech?>(null) }
     val context = LocalContext.current
+
+    var hasMicPermission by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) }
+    
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        hasMicPermission = isGranted
+    }
+
+    var isRecording by remember { mutableStateOf(false) }
+    var recognizedText by remember { mutableStateOf("") }
+    
+    val speechRecognizer = remember { SpeechRecognizer.createSpeechRecognizer(context) }
+    val speechRecognizerIntent = remember {
+        Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+        }
+    }
+
+    DisposableEffect(Unit) {
+        val listener = object : RecognitionListener {
+            override fun onReadyForSpeech(params: Bundle?) {}
+            override fun onBeginningOfSpeech() {}
+            override fun onRmsChanged(rmsdB: Float) {}
+            override fun onBufferReceived(buffer: ByteArray?) {}
+            override fun onEndOfSpeech() { isRecording = false }
+            override fun onError(error: Int) { isRecording = false }
+            override fun onResults(results: Bundle?) {
+                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                if (!matches.isNullOrEmpty()) {
+                    recognizedText = matches[0]
+                }
+                isRecording = false
+            }
+            override fun onPartialResults(results: Bundle?) {
+                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                if (!matches.isNullOrEmpty()) {
+                    recognizedText = matches[0]
+                }
+            }
+            override fun onEvent(eventType: Int, params: Bundle?) {}
+        }
+        speechRecognizer.setRecognitionListener(listener)
+        onDispose {
+            speechRecognizer.stopListening()
+            speechRecognizer.destroy()
+        }
+    }
     DisposableEffect(Unit) {
         val textToSpeech = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
@@ -76,18 +136,12 @@ fun PracticeRunScreen(lessonId: Int, viewModel: LexiViewModel, onBack: () -> Uni
                 
                 Spacer(modifier = Modifier.width(16.dp))
                 
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFF6B4EE6)
-                ) {
-                    Text(
-                        text = title.uppercase(),
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        fontSize = 12.sp
-                    )
-                }
+                Text(
+                    text = title,
+                    color = Color(0xFF4B4B4B),
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 18.sp
+                )
                 
                 Spacer(modifier = Modifier.weight(1f))
                 
@@ -113,7 +167,37 @@ fun PracticeRunScreen(lessonId: Int, viewModel: LexiViewModel, onBack: () -> Uni
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Box(modifier = Modifier.weight(2f)) {
-                        PracticeMainPanel(sentences[currentSentenceIndex], currentSentenceIndex + 1, sentences.size, tts, userProfile.useFemaleVoice)
+                        PracticeMainPanel(
+                            sentence = sentences[currentSentenceIndex],
+                            currentIndex = currentSentenceIndex + 1,
+                            totalCount = sentences.size,
+                            tts = tts,
+                            useFemaleVoice = userProfile.useFemaleVoice,
+                            isRecording = isRecording,
+                            recognizedText = recognizedText,
+                            onToggleRecord = {
+                                if (isRecording) {
+                                    speechRecognizer.stopListening()
+                                    isRecording = false
+                                } else {
+                                    if (hasMicPermission) {
+                                        recognizedText = ""
+                                        speechRecognizer.startListening(speechRecognizerIntent)
+                                        isRecording = true
+                                    } else {
+                                        permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                    }
+                                }
+                            },
+                            onNext = {
+                                if (currentSentenceIndex < sentences.size - 1) {
+                                    currentSentenceIndex++
+                                    recognizedText = ""
+                                } else {
+                                    onBack()
+                                }
+                            }
+                        )
                     }
                     Box(modifier = Modifier.weight(1f)) {
                         PracticeListPanel(sentences, currentSentenceIndex)
@@ -124,7 +208,38 @@ fun PracticeRunScreen(lessonId: Int, viewModel: LexiViewModel, onBack: () -> Uni
                     modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    PracticeMainPanel(sentences[currentSentenceIndex], currentSentenceIndex + 1, sentences.size, tts, userProfile.useFemaleVoice, modifier = Modifier.weight(1f))
+                    PracticeMainPanel(
+                        sentence = sentences[currentSentenceIndex],
+                        currentIndex = currentSentenceIndex + 1,
+                        totalCount = sentences.size,
+                        tts = tts,
+                        useFemaleVoice = userProfile.useFemaleVoice,
+                        isRecording = isRecording,
+                        recognizedText = recognizedText,
+                        onToggleRecord = {
+                            if (isRecording) {
+                                speechRecognizer.stopListening()
+                                isRecording = false
+                            } else {
+                                if (hasMicPermission) {
+                                    recognizedText = ""
+                                    speechRecognizer.startListening(speechRecognizerIntent)
+                                    isRecording = true
+                                } else {
+                                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                }
+                            }
+                        },
+                        onNext = {
+                            if (currentSentenceIndex < sentences.size - 1) {
+                                currentSentenceIndex++
+                                recognizedText = ""
+                            } else {
+                                onBack()
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
             
@@ -179,7 +294,7 @@ fun PracticeRunScreen(lessonId: Int, viewModel: LexiViewModel, onBack: () -> Uni
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun PracticeMainPanel(sentence: String, currentIndex: Int, totalCount: Int, tts: TextToSpeech?, useFemaleVoice: Boolean, modifier: Modifier = Modifier) {
+fun PracticeMainPanel(sentence: String, currentIndex: Int, totalCount: Int, tts: TextToSpeech?, useFemaleVoice: Boolean, isRecording: Boolean, recognizedText: String, onToggleRecord: () -> Unit, onNext: () -> Unit, modifier: Modifier = Modifier) {
     Card(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -221,13 +336,17 @@ fun PracticeMainPanel(sentence: String, currentIndex: Int, totalCount: Int, tts:
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                val recognizedWordsListChips = recognizedText.replace(Regex("[^a-zA-Z0-9 ]"), "").lowercase().split(" ").filter { it.isNotBlank() }
                 sentence.split(" ").forEach { word ->
+                    val cleanWord = word.replace(Regex("[^a-zA-Z0-9]"), "").lowercase()
+                    val isSpoken = recognizedWordsListChips.contains(cleanWord)
+                    
                     Surface(
                         shape = RoundedCornerShape(24.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E5E5)),
-                        color = Color.White
+                        border = androidx.compose.foundation.BorderStroke(1.dp, if (isSpoken) Color(0xFF58CC02) else Color(0xFFE5E5E5)),
+                        color = if (isSpoken) Color(0xFFD7FFB8) else Color.White
                     ) {
-                        Text(word, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4B4B4B))
+                        Text(word, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = if (isSpoken) Color(0xFF58CC02) else Color(0xFF4B4B4B))
                     }
                 }
             }
@@ -244,7 +363,7 @@ fun PracticeMainPanel(sentence: String, currentIndex: Int, totalCount: Int, tts:
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("YOU SAID", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Waiting for your voice...", color = Color.Gray, fontSize = 16.sp)
+                        Text(if (recognizedText.isEmpty()) "Waiting for your voice..." else recognizedText, color = Color.DarkGray, fontSize = 16.sp)
                     }
                 }
                 
@@ -261,7 +380,13 @@ fun PracticeMainPanel(sentence: String, currentIndex: Int, totalCount: Int, tts:
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text("SCORE", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
-                        Text("0%", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1CB0F6))
+                        val targetWords = sentence.replace(Regex("[^a-zA-Z0-9 ]"), "").lowercase().split(" ").filter { it.isNotBlank() }
+                        val recognizedWordsList = recognizedText.replace(Regex("[^a-zA-Z0-9 ]"), "").lowercase().split(" ").filter { it.isNotBlank() }
+                        val score = if (recognizedText.isEmpty() || targetWords.isEmpty()) 0 else {
+                            val matches = recognizedWordsList.count { targetWords.contains(it) }
+                            (matches.toFloat() / targetWords.size * 100).toInt().coerceIn(0, 100)
+                        }
+                        Text("${score}%", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1CB0F6))
                     }
                 }
             }

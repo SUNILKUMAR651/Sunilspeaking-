@@ -8,7 +8,9 @@ import com.example.api.Part
 import com.example.BuildConfig
 import com.example.data.WordObject
 import com.example.data.UserProfile
-import com.example.data.cache.OfflineCache
+import com.example.data.database.WordDao
+import com.example.data.database.LessonDao
+import com.example.data.database.LessonEntity
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -18,10 +20,12 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 
 class LexiRepository(
-    private val offlineCache: OfflineCache,
+    private val wordDao: WordDao,
+    private val lessonDao: LessonDao,
     private val apiService: GeminiApiService = RetrofitClient.service
 ) {
-    val allWords: Flow<List<WordObject>> = offlineCache.words
+    val allWords: Flow<List<WordObject>> = wordDao.getAllWords()
+    val allLessons: Flow<List<LessonEntity>> = lessonDao.getAllLessons()
 
     fun getWordsByCategory(category: String): Flow<List<WordObject>> {
         return allWords.map { words -> words.filter { it.category == category } }
@@ -32,12 +36,11 @@ class LexiRepository(
     }
     
     suspend fun getWord(word: String): WordObject? {
-        return offlineCache.getWord(word)
+        return wordDao.getWord(word)
     }
 
     suspend fun insertWord(word: WordObject) {
-        val updated = offlineCache.words.value + word
-        offlineCache.saveToDisk(updated)
+        wordDao.insertWord(word)
         // Optionally insert to Firebase:
         try { 
             FirebaseFirestore.getInstance().collection("words").document(word.word).set(word).await() 
@@ -98,7 +101,7 @@ class LexiRepository(
                         val remoteWords = snapshot.toObjects(WordObject::class.java)
                         if (remoteWords.isNotEmpty()) {
                             kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
-                                offlineCache.saveToDisk(remoteWords)
+                                wordDao.insertWords(remoteWords)
                             }
                         }
                     } catch (ex: Exception) {
@@ -147,7 +150,7 @@ class LexiRepository(
         insertWord(updatedWord) // also saves to disk
     }
 
-    suspend fun generateExampleSentence(word: String, interest: String): Result<String> = withContext(Dispatchers.IO) {
+    suspend fun generateExampleSentence(word: String, interest: String, targetLanguage: String = "English"): Result<String> = withContext(Dispatchers.IO) {
         val apiKey = BuildConfig.GEMINI_API_KEY
 
         
@@ -155,7 +158,7 @@ class LexiRepository(
         
         val request = GenerateContentRequest(
             contents = listOf(Content(parts = listOf(Part(text = prompt)))),
-            systemInstruction = Content(parts = listOf(Part(text = "You are LexiMaster, an expert English language coach.")))
+            systemInstruction = Content(parts = listOf(Part(text = "You are LexiMaster, an expert $targetLanguage language coach.")))
         )
         
         try {

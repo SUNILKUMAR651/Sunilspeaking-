@@ -52,6 +52,7 @@ data class TeacherMessage(val text: String, val isUser: Boolean)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AITeacherScreen(viewModel: LexiViewModel, onNavigateToCall: () -> Unit) {
+    val userProfile by viewModel.userProfile.collectAsState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     
@@ -96,7 +97,7 @@ fun AITeacherScreen(viewModel: LexiViewModel, onNavigateToCall: () -> Unit) {
         }
         
         if (messages.isEmpty()) {
-            messages = listOf(TeacherMessage("Hello! I am your AI English Teacher. How can I help you practice today? Feel free to ask me questions, or let me know what you want to learn.", false))
+            messages = listOf(TeacherMessage("Hello! I am your AI ${userProfile.targetLanguage} Teacher. How can I help you practice today? Feel free to ask me questions, or let me know what you want to learn.", false))
         }
         isLoadingHistory = false
     }
@@ -126,25 +127,40 @@ fun AITeacherScreen(viewModel: LexiViewModel, onNavigateToCall: () -> Unit) {
         
         coroutineScope.launch {
             try {
-                val systemPrompt = "You are an expert English language teacher. Help the user improve their grammar, vocabulary, and speaking skills. Correct mistakes gently, provide explanations when asked, and be encouraging. If the user makes a grammar mistake, provide a small '💡 Tip:' at the end of your response."
-                val historyParts = newMessages.map { Content(listOf(Part(if(it.isUser) "User: ${it.text}" else "Teacher: ${it.text}"))) }
+                val systemPrompt = "You are an expert ${userProfile.targetLanguage} language teacher. The user's native language is ${userProfile.nativeLanguage}. Help the user improve their grammar, vocabulary, and speaking skills. Correct mistakes gently, provide explanations when asked, and be encouraging. If the user makes a grammar mistake, provide a small '💡 Tip:' at the end of your response."
+                val historyParts = newMessages.map { Content(listOf(Part(it.text)), role = if(it.isUser) "user" else "model") }
                 
                 val request = GenerateContentRequest(
                     contents = historyParts,
                     systemInstruction = Content(listOf(Part(systemPrompt)))
                 )
                 
-                val response = RetrofitClient.service.generateContent(BuildConfig.GEMINI_API_KEY, request)
-                val aiResponse = response.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "I'm sorry, I couldn't process that."
-                val cleanResponse = aiResponse.replace(Regex("^(Teacher: )"), "")
+                var retryCount = 0
+                var aiResponse = ""
+                while(retryCount < 3) {
+                    try {
+                        val response = RetrofitClient.service.generateContent(BuildConfig.GEMINI_API_KEY, request)
+                        aiResponse = response.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "I'm sorry, I couldn't process that."
+                        break
+                    } catch (e: Exception) {
+                        retryCount++
+                        if (retryCount >= 3) throw e
+                        kotlinx.coroutines.delay(1000L * retryCount)
+                    }
+                }
+                
+                val cleanResponse = aiResponse
                 
                 val finalMessages = newMessages + TeacherMessage(cleanResponse, false)
                 messages = finalMessages
                 saveMessagesToFirestore(finalMessages)
                 viewModel.recordLessonCompletion(5, "vocabulary")
             } catch (e: Exception) {
-                messages = messages + TeacherMessage("Sorry, I had an error connecting. Please try again.", false)
-                Toast.makeText(context, "Connection Error", Toast.LENGTH_SHORT).show()
+                // Fallback smooth message instead of an ugly error
+                val fallbackResponse = "I seem to be having a little trouble connecting to my knowledge base right now. Let's keep practicing our ${userProfile.targetLanguage}! (Error: ${e.message})" 
+                val finalMessages = newMessages + TeacherMessage(fallbackResponse, false)
+                messages = finalMessages
+                saveMessagesToFirestore(finalMessages)
             } finally {
                 isThinking = false
             }
