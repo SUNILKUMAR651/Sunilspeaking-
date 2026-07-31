@@ -53,6 +53,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import com.example.utils.retryWithBackoff
 import java.util.Locale
 
 data class RoleplayScenario(
@@ -241,7 +242,7 @@ fun ActiveRoleplayScreen(scenario: RoleplayScenario, viewModel: LexiViewModel, o
     LaunchedEffect(scenario) {
         if (db != null) {
             try {
-                val doc = db.collection("users").document(userId).collection("roleplays").document(scenario.id).get().await()
+                val doc = retryWithBackoff { db.collection("users").document(userId).collection("roleplays").document(scenario.id).get().await() }
                 if (doc.exists()) {
                     val history = doc.get("messages") as? List<Map<String, Any>>
                     if (history != null) {
@@ -267,8 +268,8 @@ fun ActiveRoleplayScreen(scenario: RoleplayScenario, viewModel: LexiViewModel, o
             coroutineScope.launch {
                 try {
                     val messagesList = updatedMessages.map { mapOf("text" to it.text, "isUser" to it.isUser) }
-                    db.collection("users").document(userId).collection("roleplays").document(scenario.id)
-                        .set(mapOf("messages" to messagesList), SetOptions.merge())
+                    retryWithBackoff { db.collection("users").document(userId).collection("roleplays").document(scenario.id)
+                        .set(mapOf("messages" to messagesList), SetOptions.merge()).await() }
                 } catch (e: Exception) {
                     // Ignore error
                 }

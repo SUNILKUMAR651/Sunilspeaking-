@@ -1,20 +1,23 @@
 import re
-
 path = "app/src/main/java/com/example/viewmodel/LexiViewModel.kt"
 with open(path, "r") as f:
     content = f.read()
 
-import_str = """import com.example.data.cache.OfflineCache"""
-new_import_str = """import com.example.data.database.LexiDatabase"""
-content = content.replace(import_str, new_import_str)
+content = content.replace("import kotlinx.coroutines.tasks.await", "import kotlinx.coroutines.tasks.await\nimport com.example.utils.retryWithBackoff")
+content = content.replace("val result = auth.signInWithEmailAndPassword(email, password).await()", "val result = retryWithBackoff { auth.signInWithEmailAndPassword(email, password).await() }")
+content = content.replace("val result = auth.createUserWithEmailAndPassword(email, password).await()", "val result = retryWithBackoff { auth.createUserWithEmailAndPassword(email, password).await() }")
 
-init_str = """    init {
-        val offlineCache = OfflineCache(application)
-        repository = LexiRepository(offlineCache)"""
-new_init_str = """    init {
-        val database = LexiDatabase.getDatabase(application)
-        repository = LexiRepository(database.wordDao())"""
-content = content.replace(init_str, new_init_str)
+# wait, there's a FirebaseStorage upload:
+# val ref = storage.reference.child("avatars/${user.uid}.jpg")
+# ref.putFile(uri).await()
+# val downloadUrl = ref.downloadUrl.await()
+
+content = content.replace("ref.putFile(uri).await()", "retryWithBackoff { ref.putFile(uri).await() }")
+content = content.replace("val downloadUrl = ref.downloadUrl.await()", "val downloadUrl = retryWithBackoff { ref.downloadUrl.await() }")
+
+# val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+# db.collection("users").document(user.uid).update("avatarUrl", downloadUrl.toString()).await()
+content = content.replace("db.collection(\"users\").document(user.uid).update(\"avatarUrl\", downloadUrl.toString()).await()", "retryWithBackoff { db.collection(\"users\").document(user.uid).update(\"avatarUrl\", downloadUrl.toString()).await() }")
 
 with open(path, "w") as f:
     f.write(content)

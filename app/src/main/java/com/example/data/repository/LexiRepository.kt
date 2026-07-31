@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
+import com.example.utils.retryWithBackoff
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 
@@ -43,7 +44,7 @@ class LexiRepository(
         wordDao.insertWord(word)
         // Optionally insert to Firebase:
         try { 
-            FirebaseFirestore.getInstance().collection("words").document(word.word).set(word).await() 
+            retryWithBackoff { FirebaseFirestore.getInstance().collection("words").document(word.word).set(word).await() } 
         } catch (e: Exception) { 
             e.printStackTrace()
             throw e
@@ -52,11 +53,11 @@ class LexiRepository(
 
     suspend fun getLeaderboard(limit: Long = 10): List<UserProfile> = withContext(Dispatchers.IO) {
         try {
-            val snapshot = FirebaseFirestore.getInstance().collection("users")
+            val snapshot = retryWithBackoff { FirebaseFirestore.getInstance().collection("users")
                 .orderBy("totalXp", com.google.firebase.firestore.Query.Direction.DESCENDING)
                 .limit(limit)
                 .get()
-                .await()
+                .await() }
             snapshot.documents.mapNotNull { it.toObject(UserProfile::class.java) }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -66,12 +67,12 @@ class LexiRepository(
 
     suspend fun getUserProfile(userId: String): UserProfile = withContext(Dispatchers.IO) {
         try {
-            val doc = FirebaseFirestore.getInstance().collection("users").document(userId).get().await()
+            val doc = retryWithBackoff { FirebaseFirestore.getInstance().collection("users").document(userId).get().await() }
             if (doc.exists()) {
                 doc.toObject(UserProfile::class.java) ?: UserProfile(id = userId)
             } else {
                 val newProfile = UserProfile(id = userId)
-                FirebaseFirestore.getInstance().collection("users").document(userId).set(newProfile).await()
+                retryWithBackoff { FirebaseFirestore.getInstance().collection("users").document(userId).set(newProfile).await() }
                 newProfile
             }
         } catch (e: Exception) {
@@ -82,7 +83,7 @@ class LexiRepository(
 
     suspend fun updateUserProfile(profile: UserProfile) = withContext(Dispatchers.IO) {
         try {
-            FirebaseFirestore.getInstance().collection("users").document(profile.id).set(profile).await()
+            retryWithBackoff { FirebaseFirestore.getInstance().collection("users").document(profile.id).set(profile).await() }
         } catch (e: Exception) {
             e.printStackTrace()
         }

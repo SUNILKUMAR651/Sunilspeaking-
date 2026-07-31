@@ -24,6 +24,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
+import com.example.utils.retryWithBackoff
 import android.speech.tts.TextToSpeech
 import java.util.Locale
 import com.example.utils.AudioPlayer

@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import com.example.utils.retryWithBackoff
 
 sealed class AuthStatus {
     object Initial : AuthStatus()
@@ -98,7 +99,7 @@ class LexiViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _authStatus.value = AuthStatus.Loading
             try {
-                val result = auth.signInWithEmailAndPassword(email, password).await()
+                val result = retryWithBackoff { auth.signInWithEmailAndPassword(email, password).await() }
                 result.user?.uid?.let { uid ->
                     _authStatus.value = AuthStatus.Authenticated(uid)
                     _isAdmin.value = result.user?.email == "sittukumar8433250@gmail.com"
@@ -116,7 +117,7 @@ class LexiViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _authStatus.value = AuthStatus.Loading
             try {
-                val result = auth.createUserWithEmailAndPassword(email, password).await()
+                val result = retryWithBackoff { auth.createUserWithEmailAndPassword(email, password).await() }
                 result.user?.uid?.let { uid ->
                     // Initialize empty profile for new user
                     val newProfile = com.example.data.UserProfile(

@@ -1,16 +1,15 @@
 import re
-
 path = "app/src/main/java/com/example/data/repository/LexiRepository.kt"
 with open(path, "r") as f:
     content = f.read()
 
-func_def = """    suspend fun generateExampleSentence(word: String, interest: String): Result<String> = withContext(Dispatchers.IO) {"""
-new_func_def = """    suspend fun generateExampleSentence(word: String, interest: String, targetLanguage: String = "English"): Result<String> = withContext(Dispatchers.IO) {"""
-content = content.replace(func_def, new_func_def)
+content = content.replace("import kotlinx.coroutines.tasks.await", "import kotlinx.coroutines.tasks.await\nimport com.example.utils.retryWithBackoff")
 
-sys_prompt = """            systemInstruction = Content(parts = listOf(Part(text = "You are LexiMaster, an expert English language coach.")))"""
-new_sys_prompt = """            systemInstruction = Content(parts = listOf(Part(text = "You are LexiMaster, an expert $targetLanguage language coach.")))"""
-content = content.replace(sys_prompt, new_sys_prompt)
+content = content.replace("FirebaseFirestore.getInstance().collection(\"words\").document(word.word).set(word).await()", "retryWithBackoff { FirebaseFirestore.getInstance().collection(\"words\").document(word.word).set(word).await() }")
+content = content.replace("FirebaseFirestore.getInstance().collection(\"users\")\n                .orderBy(\"totalXp\", com.google.firebase.firestore.Query.Direction.DESCENDING)\n                .limit(limit)\n                .get()\n                .await()", "retryWithBackoff { FirebaseFirestore.getInstance().collection(\"users\")\n                .orderBy(\"totalXp\", com.google.firebase.firestore.Query.Direction.DESCENDING)\n                .limit(limit)\n                .get()\n                .await() }")
+content = content.replace("FirebaseFirestore.getInstance().collection(\"users\").document(userId).get().await()", "retryWithBackoff { FirebaseFirestore.getInstance().collection(\"users\").document(userId).get().await() }")
+content = content.replace("FirebaseFirestore.getInstance().collection(\"users\").document(userId).set(newProfile).await()", "retryWithBackoff { FirebaseFirestore.getInstance().collection(\"users\").document(userId).set(newProfile).await() }")
+content = content.replace("FirebaseFirestore.getInstance().collection(\"users\").document(profile.id).set(profile).await()", "retryWithBackoff { FirebaseFirestore.getInstance().collection(\"users\").document(profile.id).set(profile).await() }")
 
 with open(path, "w") as f:
     f.write(content)

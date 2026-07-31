@@ -43,6 +43,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import com.example.utils.retryWithBackoff
 import java.util.Locale
 
 import androidx.compose.material.icons.filled.Call
@@ -82,7 +83,7 @@ fun AITeacherScreen(viewModel: LexiViewModel, onNavigateToCall: () -> Unit) {
     LaunchedEffect(Unit) {
         if (db != null) {
             try {
-                val doc = db.collection("users").document(userId).collection("teacher").document("history").get().await()
+                val doc = retryWithBackoff { db.collection("users").document(userId).collection("teacher").document("history").get().await() }
                 if (doc.exists()) {
                     val history = doc.get("messages") as? List<Map<String, Any>>
                     if (history != null) {
@@ -107,8 +108,8 @@ fun AITeacherScreen(viewModel: LexiViewModel, onNavigateToCall: () -> Unit) {
             coroutineScope.launch {
                 try {
                     val messagesList = updatedMessages.map { mapOf("text" to it.text, "isUser" to it.isUser) }
-                    db.collection("users").document(userId).collection("teacher").document("history")
-                        .set(mapOf("messages" to messagesList), SetOptions.merge())
+                    retryWithBackoff { db.collection("users").document(userId).collection("teacher").document("history")
+                        .set(mapOf("messages" to messagesList), SetOptions.merge()).await() }
                 } catch (e: Exception) {
                     // Ignore error
                 }
@@ -135,19 +136,8 @@ fun AITeacherScreen(viewModel: LexiViewModel, onNavigateToCall: () -> Unit) {
                     systemInstruction = Content(listOf(Part(systemPrompt)))
                 )
                 
-                var retryCount = 0
-                var aiResponse = ""
-                while(retryCount < 3) {
-                    try {
-                        val response = RetrofitClient.service.generateContent(BuildConfig.GEMINI_API_KEY, request)
-                        aiResponse = response.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "I'm sorry, I couldn't process that."
-                        break
-                    } catch (e: Exception) {
-                        retryCount++
-                        if (retryCount >= 3) throw e
-                        kotlinx.coroutines.delay(1000L * retryCount)
-                    }
-                }
+                val response = RetrofitClient.service.generateContent(BuildConfig.GEMINI_API_KEY, request)
+                val aiResponse = response.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "I'm sorry, I couldn't process that."
                 
                 val cleanResponse = aiResponse
                 
