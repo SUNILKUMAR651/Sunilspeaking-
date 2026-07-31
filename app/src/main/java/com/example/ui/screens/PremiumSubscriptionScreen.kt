@@ -86,7 +86,7 @@ fun PremiumSubscriptionScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                "Get unlimited access to AI Teacher, native accent analysis, and real-world conversation scenarios.",
+                "Get unlimited access to AI English Teacher, native accent analysis, and real-world conversation scenarios.",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -94,7 +94,7 @@ fun PremiumSubscriptionScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            PremiumFeatureRow("Unlimited AI Teacher Video Calls")
+            PremiumFeatureRow("Unlimited AI English Teacher Video Calls")
             PremiumFeatureRow("IELTS & TOEFL Mock Tests with Scoring")
             PremiumFeatureRow("Advanced Accent & Pitch Analysis Lab")
             PremiumFeatureRow("Real-time Grammar Correction in Scenarios")
@@ -150,7 +150,12 @@ fun PremiumSubscriptionScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
                     } else {
                         Button(
                             onClick = { 
-                                val activity = context as? MainActivity
+                                var activityContext = context
+                                while (activityContext is android.content.ContextWrapper) {
+                                    if (activityContext is MainActivity) break
+                                    activityContext = activityContext.baseContext
+                                }
+                                val activity = activityContext as? MainActivity
                                 activity?.startPayment(999, 
                                     onSuccess = {
                                         viewModel.updateProfile(userProfile.copy(isPremium = true))

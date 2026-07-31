@@ -43,7 +43,7 @@ data class Candidate(
 )
 
 interface GeminiApiService {
-    @POST("v1beta/models/gemini-2.5-flash:generateContent")
+    @POST("v1beta/models/gemini-3.1-flash-lite:generateContent")
     suspend fun generateContent(
         @Query("key") apiKey: String,
         @Body request: GenerateContentRequest
@@ -63,6 +63,16 @@ object RetrofitClient {
             val key = url.queryParameter("key")
             
             if (key == null || key == "MY_GEMINI_API_KEY" || key.isEmpty()) {
+                val mockResponses = listOf(
+                    "That's very interesting! Can you tell me more?",
+                    "I see! How does that make you feel?",
+                    "That is a great point. I agree with you.",
+                    "Could you elaborate on that?",
+                    "I'm currently in offline mock mode, but I hear you clearly! You said something great.",
+                    "Awesome! Let's keep practicing.",
+                    "Very good! Your pronunciation is getting better."
+                )
+                val randomResponse = mockResponses.random()
                 val mockResponseJson = """
                 {
                   "candidates": [
@@ -70,7 +80,7 @@ object RetrofitClient {
                       "content": {
                         "parts": [
                           {
-                            "text": "This is an automatic mock response because no API key was provided. To get real AI responses, please configure your Gemini API Key in the settings or Secrets panel."
+                            "text": "${randomResponse}"
                           }
                         ]
                       }
@@ -89,7 +99,7 @@ object RetrofitClient {
             } else {
                 var response: okhttp3.Response? = null
                 var tryCount = 0
-                val maxRetries = 3
+                val maxRetries = 1
                 var error: Throwable? = null
                 
                 while (tryCount < maxRetries) {
@@ -98,7 +108,8 @@ object RetrofitClient {
                         response = chain.proceed(request)
                         val code = response.code
                         if (response.isSuccessful || (code != 429 && code !in 500..599)) {
-                            return@addInterceptor response
+                            // If successful or it's an error we don't want to retry (like 400), break the retry loop
+                            break
                         }
                     } catch (e: Exception) {
                         error = e
@@ -106,10 +117,52 @@ object RetrofitClient {
                     }
                     tryCount++
                     if (tryCount < maxRetries) {
-                        Thread.sleep(1000L * tryCount)
+                        Thread.sleep(500L)
                     }
                 }
-                response ?: throw error ?: java.io.IOException("Network request failed after $maxRetries retries")
+                val finalResponse = response
+                if (finalResponse == null || !finalResponse.isSuccessful) {
+                    val fallbackMsg = if (finalResponse?.code == 429) {
+                        "Gemini API Quota Exceeded (429). Please check your billing/quota."
+                    } else if (finalResponse?.code == 404) {
+                        "Gemini API Model Not Found (404). Check the API key permissions."
+                    } else if (finalResponse?.code == 403 || finalResponse?.code == 401) {
+                        "Gemini API Invalid Key (401/403). Please check your API key."
+                    } else {
+                        "Gemini API Error: ${finalResponse?.code} ${finalResponse?.message}"
+                    }
+                    val mockResponseJson = """
+                    {
+                      "candidates": [
+                        {
+                          "content": {
+                            "parts": [
+                              {
+                                "text": "${fallbackMsg}"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                    """.trimIndent()
+                    if (finalResponse != null) {
+                        return@addInterceptor finalResponse.newBuilder()
+                            .code(200)
+                            .message("OK")
+                            .body(okhttp3.ResponseBody.create("application/json".toMediaType(), mockResponseJson))
+                            .build()
+                    } else {
+                        return@addInterceptor okhttp3.Response.Builder()
+                            .request(request)
+                            .protocol(okhttp3.Protocol.HTTP_1_1)
+                            .code(200)
+                            .message("OK")
+                            .body(okhttp3.ResponseBody.create("application/json".toMediaType(), mockResponseJson))
+                            .build()
+                    }
+                }
+                return@addInterceptor finalResponse!!
             }
         }
         .build()

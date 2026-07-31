@@ -1,31 +1,22 @@
 import re
+with open("app/src/main/java/com/example/utils/FishAudioPlayer.kt", "r") as f:
+    content = f.read()
 
-# 1. PracticeRunScreen
-path = "app/src/main/java/com/example/ui/screens/PracticeRunScreen.kt"
-with open(path, 'r') as f: content = f.read()
-content = content.replace("PracticeMainPanel(sentences[currentSentenceIndex], currentSentenceIndex + 1, sentences.size)", "PracticeMainPanel(sentences[currentSentenceIndex], currentSentenceIndex + 1, sentences.size, tts, userProfile.useFemaleVoice)")
-content = content.replace("PracticeMainPanel(sentences[currentSentenceIndex], currentSentenceIndex + 1, sentences.size, modifier = Modifier.weight(1f))", "PracticeMainPanel(sentences[currentSentenceIndex], currentSentenceIndex + 1, sentences.size, tts, userProfile.useFemaleVoice, modifier = Modifier.weight(1f))")
-with open(path, 'w') as f: f.write(content)
+# Replace API key with the exact one they provided
+content = re.sub(r'private val API_KEY = "[^"]+"', 'private val API_KEY = "c6fe65b595354573b51a572583381ada"', content)
 
-# 2. ProfileScreen
-path = "app/src/main/java/com/example/ui/screens/ProfileScreen.kt"
-with open(path, 'r') as f: content = f.read()
-content = content.replace("profile.", "userProfile.")
-with open(path, 'w') as f: f.write(content)
+# Remove the reference_id since it's the API key, not a voice ID
+bad_json = """val json = JSONObject().apply {
+                    put("text", text)
+                    put("format", "mp3")
+                    put("reference_id", "c6fe65b595354573b51a572583381ada") // The user's specific voice ID
+                }"""
 
-# 3. InteractivePracticeScreen
-path = "app/src/main/java/com/example/ui/screens/InteractivePracticeScreen.kt"
-with open(path, 'r') as f: content = f.read()
-if "val userProfile by viewModel.userProfile.collectAsState()" not in content:
-    content = content.replace("fun InteractivePracticeScreen(\n    viewModel: LexiViewModel,\n    onBack: () -> Unit\n) {", "fun InteractivePracticeScreen(\n    viewModel: LexiViewModel,\n    onBack: () -> Unit\n) {\n    val userProfile by viewModel.userProfile.collectAsState()")
-with open(path, 'w') as f: f.write(content)
+good_json = """val json = JSONObject().apply {
+                    put("text", text)
+                    put("format", "mp3")
+                }"""
+content = content.replace(bad_json, good_json)
 
-# 4. LeaderboardScreen
-path = "app/src/main/java/com/example/ui/screens/LeaderboardScreen.kt"
-with open(path, 'r') as f: content = f.read()
-if "val userProfile by viewModel.userProfile.collectAsState()" not in content:
-    content = content.replace("fun LeaderboardScreen(viewModel: LexiViewModel, onBack: () -> Unit) {", "fun LeaderboardScreen(viewModel: LexiViewModel, onBack: () -> Unit) {\n    val userProfile by viewModel.userProfile.collectAsState()")
-    content = content.replace("fun LeaderboardScreen(\n    viewModel: LexiViewModel,\n    onBack: () -> Unit\n) {", "fun LeaderboardScreen(\n    viewModel: LexiViewModel,\n    onBack: () -> Unit\n) {\n    val userProfile by viewModel.userProfile.collectAsState()")
-content = content.replace("profile.", "userProfile.")
-with open(path, 'w') as f: f.write(content)
-
+with open("app/src/main/java/com/example/utils/FishAudioPlayer.kt", "w") as f:
+    f.write(content)

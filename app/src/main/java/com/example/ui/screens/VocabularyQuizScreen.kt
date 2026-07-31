@@ -26,6 +26,8 @@ import com.example.data.WordObject
 import com.example.viewmodel.LexiViewModel
 import kotlinx.coroutines.delay
 import java.util.Locale
+import com.airbnb.lottie.compose.*
+import com.example.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,6 +45,20 @@ fun VocabularyQuizScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
     var timeLeft by remember { mutableIntStateOf(15) }
     
     val toneGen = remember { ToneGenerator(AudioManager.STREAM_MUSIC, 100) }
+    
+    var showSuccessAnimation by remember { mutableStateOf(false) }
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.heart))
+    val progress by animateLottieCompositionAsState(
+        composition,
+        isPlaying = showSuccessAnimation,
+        restartOnPlay = false
+    )
+    
+    LaunchedEffect(progress) {
+        if (progress == 1f) {
+            showSuccessAnimation = false
+        }
+    }
     DisposableEffect(Unit) {
         onDispose { toneGen.release() }
     }
@@ -98,6 +114,7 @@ fun VocabularyQuizScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
         }
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -271,6 +288,7 @@ fun VocabularyQuizScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
                             if (selectedAnswer == question.correctAnswer) {
                                 score++
                                 toneGen.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT, 150)
+                                showSuccessAnimation = true
                             } else {
                                 toneGen.startTone(ToneGenerator.TONE_SUP_ERROR, 300)
                             }
@@ -325,6 +343,20 @@ fun VocabularyQuizScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
                 }
             }
         }
+    }
+    
+    if (showSuccessAnimation) {
+        Box(
+            modifier = Modifier.fillMaxSize().padding(bottom = 100.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            LottieAnimation(
+                composition = composition,
+                progress = { progress },
+                modifier = Modifier.size(250.dp)
+            )
+        }
+    }
     }
 }
 

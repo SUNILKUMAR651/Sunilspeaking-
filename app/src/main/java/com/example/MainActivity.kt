@@ -83,7 +83,7 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
     fun startPayment(amount: Int, onSuccess: () -> Unit, onError: (String) -> Unit) {
         onPaymentSuccessCallback = onSuccess
         onPaymentErrorCallback = onError
-        val apiKey = BuildConfig.RAZORPAY_API_KEY
+        val apiKey = "rzp_test_TJFnozzpPbub2B"
         if (apiKey.isEmpty() || apiKey == "MY_RAZORPAY_KEY" || apiKey == "rzp_test_mock") {
             // Mock processing handler
             Toast.makeText(this, "Processing Mock Payment...", Toast.LENGTH_SHORT).show()
@@ -101,6 +101,12 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
             options.put("currency", "INR")
             options.put("amount", amount * 100) // in paise
             options.put("theme.color", "#6B4EE6")
+            
+            val prefill = JSONObject()
+            prefill.put("email", "test@example.com")
+            prefill.put("contact", "9999999999")
+            options.put("prefill", prefill)
+            
             checkout.open(this, options)
         } catch (e: Exception) {
             onError(e.message ?: "Error launching payment")
@@ -114,24 +120,31 @@ fun LexiApp(viewModel: LexiViewModel) {
     var currentRoute by remember { mutableStateOf("home") }
     
     val context = androidx.compose.ui.platform.LocalContext.current
+    val userProfile by viewModel.userProfile.collectAsState()
+    
     val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        if (isGranted) {
-            com.example.utils.NotificationHelper.scheduleDailyReminder(context, 18, 0) // 6 PM
+        if (isGranted && userProfile.notificationsEnabled) {
+            com.example.utils.NotificationHelper.scheduleDailyReminder(context, userProfile.reminderHour, userProfile.reminderMinute)
         }
     }
     
-    LaunchedEffect(Unit) {
+    LaunchedEffect(userProfile.notificationsEnabled, userProfile.reminderHour, userProfile.reminderMinute) {
+        if (!userProfile.notificationsEnabled) {
+            com.example.utils.NotificationHelper.cancelReminder(context)
+            return@LaunchedEffect
+        }
+        
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             val permission = androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS)
             if (permission != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                 permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
             } else {
-                com.example.utils.NotificationHelper.scheduleDailyReminder(context, 18, 0)
+                com.example.utils.NotificationHelper.scheduleDailyReminder(context, userProfile.reminderHour, userProfile.reminderMinute)
             }
         } else {
-            com.example.utils.NotificationHelper.scheduleDailyReminder(context, 18, 0)
+            com.example.utils.NotificationHelper.scheduleDailyReminder(context, userProfile.reminderHour, userProfile.reminderMinute)
         }
     }
     
@@ -213,7 +226,7 @@ fun LexiApp(viewModel: LexiViewModel) {
                             restoreState = true
                         }
                     },
-                    icon = { Icon(Icons.Filled.SmartToy, contentDescription = "AI Teacher") },
+                    icon = { Icon(Icons.Filled.SmartToy, contentDescription = "AI English Teacher") },
                     label = { Text("AI", maxLines = 1) },
                     alwaysShowLabel = false
                 )

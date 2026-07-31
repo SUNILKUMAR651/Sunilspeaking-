@@ -1,20 +1,51 @@
 import re
-
-path = "app/src/main/java/com/example/ui/screens/AITeacherScreen.kt"
-with open(path, "r") as f:
+with open("app/src/main/java/com/example/ui/screens/AITeacherScreen.kt", "r") as f:
     content = f.read()
 
-greeting = """messages = listOf(TeacherMessage("Hello! I am your AI English Teacher. How can I help you practice today? Feel free to ask me questions, or let me know what you want to learn.", false))"""
-new_greeting = """messages = listOf(TeacherMessage("Hello! I am your AI ${userProfile.targetLanguage} Teacher. How can I help you practice today? Feel free to ask me questions, or let me know what you want to learn.", false))"""
-content = content.replace(greeting, new_greeting)
+# Add imports
+if "import android.speech.tts.TextToSpeech" not in content:
+    content = content.replace("import android.speech.SpeechRecognizer", "import android.speech.SpeechRecognizer\nimport android.speech.tts.TextToSpeech\nimport com.example.utils.FishAudioPlayer")
 
-sys_prompt = """                val systemPrompt = "You are an expert English language teacher. Help the user improve their grammar, vocabulary, and speaking skills. Correct mistakes gently, provide explanations when asked, and be encouraging. If the user makes a grammar mistake, provide a small '💡 Tip:' at the end of your response." """
-new_sys_prompt = """                val systemPrompt = "You are an expert ${userProfile.targetLanguage} language teacher. The user's native language is ${userProfile.nativeLanguage}. Help the user improve their grammar, vocabulary, and speaking skills. Correct mistakes gently, provide explanations when asked, and be encouraging. If the user makes a grammar mistake, provide a small '💡 Tip:' at the end of your response." """
-content = content.replace(sys_prompt, new_sys_prompt)
+# Add tts state and cleanup
+if "val tts = remember" not in content:
+    tts_code = """
+    val tts = remember { mutableStateOf<TextToSpeech?>(null) }
+    DisposableEffect(Unit) {
+        val ttsInstance = TextToSpeech(context) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                tts.value?.language = Locale.US
+            }
+        }
+        tts.value = ttsInstance
+        onDispose {
+            tts.value?.stop()
+            tts.value?.shutdown()
+            FishAudioPlayer.stop()
+        }
+    }
+"""
+    # Insert after `val coroutineScope = rememberCoroutineScope()`
+    content = content.replace("val coroutineScope = rememberCoroutineScope()", "val coroutineScope = rememberCoroutineScope()" + tts_code)
 
-fallback = """                val fallbackResponse = "I seem to be having a little trouble connecting to my knowledge base right now. Let's keep practicing our English! What else would you like to talk about?" """
-new_fallback = """                val fallbackResponse = "I seem to be having a little trouble connecting to my knowledge base right now. Let's keep practicing our ${userProfile.targetLanguage}! What else would you like to talk about?" """
-content = content.replace(fallback, new_fallback)
+# Find where AI responds
+ai_response_block = """val finalMessages = newMessages + TeacherMessage(cleanResponse, false)
+                messages = finalMessages
+                saveMessagesToFirestore(finalMessages)
+                viewModel.recordLessonCompletion(5, "vocabulary")"""
 
-with open(path, "w") as f:
-    f.write(content)
+if ai_response_block in content:
+    new_ai_response_block = ai_response_block + """
+                FishAudioPlayer.playAudio(
+                    context = context,
+                    text = cleanResponse,
+                    isFemale = userProfile.useFemaleVoice,
+                    fallbackTts = tts.value
+                )"""
+    content = content.replace(ai_response_block, new_ai_response_block)
+
+# Also find where mock response is generated
+mock_response_block = """val finalMessages = newMessages + TeacherMessage(cleanResponse, false)
+                messages = finalMessages
+                saveMessagesToFirestore(finalMessages)"""
+                
+# Wait, let's check what the catch block looks like

@@ -26,6 +26,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.viewmodel.LexiViewModel
+import com.airbnb.lottie.compose.*
+import com.example.R
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,7 +38,21 @@ fun HomeScreen(
     onOpenDrawer: () -> Unit = {}
 ) {
     val userProfile by viewModel.userProfile.collectAsState()
+    val showGoalAnimation by viewModel.showGoalAnimation.collectAsState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.heart))
+    val progress by animateLottieCompositionAsState(
+        composition,
+        isPlaying = showGoalAnimation,
+        restartOnPlay = false
+    )
+    
+    LaunchedEffect(progress) {
+        if (progress == 1f && showGoalAnimation) {
+            viewModel.onGoalAnimationShown()
+        }
+    }
 
     // Background Gradient for Fluent Dark Theme
     val bgBrush = Brush.verticalGradient(
@@ -125,6 +142,7 @@ fun HomeScreen(
             containerColor = Color.Transparent, // Let the Box gradient show through
             modifier = Modifier.fillMaxSize()
         ) { padding ->
+            Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -313,6 +331,23 @@ fun HomeScreen(
                 
                 item {
                     Spacer(modifier = Modifier.height(80.dp))
+                }
+            }
+            
+            }
+            if (showGoalAnimation) {
+                Box(
+                    modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha=0.6f)).clickable { viewModel.onGoalAnimationShown() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        LottieAnimation(
+                            composition = composition,
+                            progress = { progress },
+                            modifier = Modifier.size(300.dp)
+                        )
+                        Text("Daily Goal Achieved! +XP", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }

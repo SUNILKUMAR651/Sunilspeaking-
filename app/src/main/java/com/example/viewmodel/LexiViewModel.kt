@@ -63,6 +63,13 @@ class LexiViewModel(application: Application) : AndroidViewModel(application) {
     
     private val _userProfile = MutableStateFlow(com.example.data.UserProfile())
     val userProfile: StateFlow<com.example.data.UserProfile> = _userProfile.asStateFlow()
+    
+    private val _showGoalAnimation = MutableStateFlow(false)
+    val showGoalAnimation: StateFlow<Boolean> = _showGoalAnimation.asStateFlow()
+    
+    fun onGoalAnimationShown() {
+        _showGoalAnimation.value = false
+    }
 
     private val _isAdmin = MutableStateFlow(false)
     val isAdmin: StateFlow<Boolean> = _isAdmin.asStateFlow()
@@ -177,6 +184,9 @@ class LexiViewModel(application: Application) : AndroidViewModel(application) {
         // We'll just track if we've incremented the streak this app session.
         val newStreak = currentProfile.dayStreak + if (xpEarned > 15) 1 else 0 // Fake some streak updates based on big sessions
 
+        if (xpEarned > 0) {
+            _showGoalAnimation.value = true
+        }
         val newLevel = when {
             newXp < 1000 -> "Beginner Level (A1)"
             newXp < 3000 -> "Elementary Level (A2)"
@@ -230,6 +240,9 @@ class LexiViewModel(application: Application) : AndroidViewModel(application) {
     fun addXp(xpToAdd: Int) {
         val currentProfile = _userProfile.value
         val newXp = currentProfile.totalXp + xpToAdd
+        if (xpToAdd > 0) {
+            _showGoalAnimation.value = true
+        }
         val newLevel = when {
             newXp < 1000 -> "Beginner Level (A1)"
             newXp < 3000 -> "Elementary Level (A2)"

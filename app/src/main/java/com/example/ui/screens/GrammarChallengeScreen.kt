@@ -1,6 +1,10 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.layout.*
+import android.media.AudioManager
+import android.media.ToneGenerator
+import com.airbnb.lottie.compose.*
+import com.example.R
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -20,6 +24,25 @@ fun GrammarChallengeScreen(onBack: () -> Unit) {
     var showResult by remember { mutableStateOf(false) }
     var score by remember { mutableStateOf(0) }
     
+    val toneGen = remember { ToneGenerator(AudioManager.STREAM_MUSIC, 100) }
+    DisposableEffect(Unit) {
+        onDispose { toneGen.release() }
+    }
+    
+    var showSuccessAnimation by remember { mutableStateOf(false) }
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.heart))
+    val progress by animateLottieCompositionAsState(
+        composition,
+        isPlaying = showSuccessAnimation,
+        restartOnPlay = false
+    )
+    
+    LaunchedEffect(progress) {
+        if (progress == 1f) {
+            showSuccessAnimation = false
+        }
+    }
+    
     val questions = listOf(
         GrammarQuestion(
             sentence = "By this time next year, I ___ my degree.",
@@ -38,6 +61,7 @@ fun GrammarChallengeScreen(onBack: () -> Unit) {
         )
     )
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -145,6 +169,10 @@ fun GrammarChallengeScreen(onBack: () -> Unit) {
                         } else {
                             if (selectedAnswer == question.correctAnswer) {
                                 score++
+                                toneGen.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT, 150)
+                                showSuccessAnimation = true
+                            } else {
+                                toneGen.startTone(ToneGenerator.TONE_SUP_ERROR, 300)
                             }
                             showResult = true
                         }
@@ -181,6 +209,20 @@ fun GrammarChallengeScreen(onBack: () -> Unit) {
                 }
             }
         }
+    }
+    
+    if (showSuccessAnimation) {
+        Box(
+            modifier = Modifier.fillMaxSize().padding(bottom = 100.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            LottieAnimation(
+                composition = composition,
+                progress = { progress },
+                modifier = Modifier.size(250.dp)
+            )
+        }
+    }
     }
 }
 

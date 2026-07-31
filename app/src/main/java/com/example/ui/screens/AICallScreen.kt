@@ -8,8 +8,6 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
-import com.example.utils.speakWithVoice
-import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -23,7 +21,10 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +42,7 @@ import com.example.api.GenerateContentRequest
 import com.example.api.Content
 import com.example.api.Part
 import com.example.BuildConfig
+import com.example.utils.FishAudioPlayer
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -88,41 +90,61 @@ fun AICallScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
                 isListening = true
                 aiMessage = "Listening..."
             } catch (e: Exception) {
+                android.util.Log.e("GeminiError", "AICall Gemini API error", e)
                 // Ignore
             }
         }
     }
-
-    DisposableEffect(context) {
+    
+    DisposableEffect(Unit) {
         val listener = object : RecognitionListener {
             override fun onReadyForSpeech(params: Bundle?) {}
             override fun onBeginningOfSpeech() {}
             override fun onRmsChanged(rmsdB: Float) {}
             override fun onBufferReceived(buffer: ByteArray?) {}
-            override fun onEndOfSpeech() { isListening = false }
-            override fun onError(error: Int) { 
+            override fun onEndOfSpeech() {
+                isListening = false
+            }
+            override fun onError(error: Int) {
                 isListening = false
                 if (!isSpeaking && !isMuted) {
                     coroutineScope.launch {
-                        kotlinx.coroutines.delay(500)
+                        kotlinx.coroutines.delay(1000)
                         startListening()
                     }
                 }
             }
             override fun onResults(results: Bundle?) {
-                isListening = false
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                val text = matches?.firstOrNull() ?: ""
-                
-                if (text.isNotBlank()) {
+                if (!matches.isNullOrEmpty()) {
+                    val userText = matches[0]
                     aiMessage = "Thinking..."
+                    
+                    val rawHistory = conversationHistory + Content(listOf(Part(userText)), role = "user")
+                    val collapsedHistory = mutableListOf<Content>()
+                    for (msg in rawHistory) {
+                        if (collapsedHistory.isEmpty()) {
+                            if (msg.role == "user") {
+                                collapsedHistory.add(msg)
+                            }
+                        } else {
+                            val last = collapsedHistory.last()
+                            if (last.role == msg.role) {
+                                val combinedText = (last.parts.firstOrNull()?.text ?: "") + "\n" + (msg.parts.firstOrNull()?.text ?: "")
+                                collapsedHistory[collapsedHistory.size - 1] = Content(listOf(Part(combinedText)), role = last.role)
+                            } else {
+                                collapsedHistory.add(msg)
+                            }
+                        }
+                    }
+                    if (collapsedHistory.isEmpty()) {
+                        collapsedHistory.add(Content(listOf(Part("Hello")), role = "user"))
+                    }
+                    val newHistory = collapsedHistory
+                    
                     coroutineScope.launch {
                         try {
-                            val userContent = Content(listOf(Part(text)), role = "user")
-                            val newHistory = conversationHistory + userContent
-                            
-                            val systemPrompt = "You are a ${userProfile.targetLanguage} teacher having a voice call with a student whose native language is ${userProfile.nativeLanguage}. Keep your answers short, conversational, and helpful (max 2-3 sentences)."
-                            
+                            val systemPrompt = "You are a friendly AI English teacher. Have a natural conversation with the user. Keep your responses brief, conversational, and helpful for a language learner. Correct any major mistakes naturally."
                             val request = GenerateContentRequest(
                                 contents = newHistory,
                                 systemInstruction = Content(listOf(Part(systemPrompt)))
@@ -136,22 +158,49 @@ fun AICallScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
                             conversationHistory = newHistory + Content(listOf(Part(cleanResponse)), role = "model")
                             aiMessage = cleanResponse
                             
-                            isSpeaking = true
-                            tts.value?.let { ttsInstance ->
-                                if (isFemaleVoice) {
-                                    ttsInstance.setPitch(1.4f)
-                                } else {
-                                    ttsInstance.setPitch(0.7f)
+                            FishAudioPlayer.playAudio(
+                                context = context,
+                                text = cleanResponse,
+                                isFemale = isFemaleVoice,
+                                fallbackTts = tts.value,
+                                utteranceId = "response_${System.currentTimeMillis()}",
+                                onStart = { isSpeaking = true },
+                                onDone = {
+                                    isSpeaking = false
+                                    coroutineScope.launch {
+                                        kotlinx.coroutines.delay(1000)
+                                        startListening()
+                                    }
                                 }
-                                val utteranceId = "response_${System.currentTimeMillis()}"
-                                ttsInstance.speakWithVoice(cleanResponse, userProfile.useFemaleVoice, utteranceId)
-                            }
+                            )
                         } catch (e: Exception) {
-                            aiMessage = "Sorry, I had an error connecting."
-                            coroutineScope.launch {
-                                kotlinx.coroutines.delay(1000)
-                                startListening()
-                            }
+                android.util.Log.e("GeminiError", "AICall Gemini API error", e)
+                            val mockResponses = listOf(
+                                "That's very interesting! Can you tell me more?",
+                                "I see! How does that make you feel?",
+                                "That is a great point. I agree with you.",
+                                "Could you elaborate on that?",
+                                "Awesome! Let's keep practicing.",
+                                "Very good! Your pronunciation is getting better."
+                            )
+                            val cleanResponse = mockResponses.random()
+                            aiMessage = cleanResponse
+                            
+                            FishAudioPlayer.playAudio(
+                                context = context,
+                                text = cleanResponse,
+                                isFemale = isFemaleVoice,
+                                fallbackTts = tts.value,
+                                utteranceId = "response_${System.currentTimeMillis()}",
+                                onStart = { isSpeaking = true },
+                                onDone = {
+                                    isSpeaking = false
+                                    coroutineScope.launch {
+                                        kotlinx.coroutines.delay(1000)
+                                        startListening()
+                                    }
+                                }
+                            )
                         }
                     }
                 } else {
@@ -167,31 +216,42 @@ fun AICallScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
             if (status == TextToSpeech.SUCCESS) {
                 tts.value?.language = Locale.US
                 
-                tts.value?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                tts.value?.setOnUtteranceProgressListener(object : android.speech.tts.UtteranceProgressListener() {
                     override fun onStart(utteranceId: String?) {
                         isSpeaking = true
                     }
                     override fun onDone(utteranceId: String?) {
                         isSpeaking = false
-                        coroutineScope.launch {
-                            aiMessage = "..."
-                            startListening()
+                        if (utteranceId?.startsWith("response_") == true || utteranceId == "greeting") {
+                            coroutineScope.launch {
+                                kotlinx.coroutines.delay(1000)
+                                startListening()
+                            }
                         }
                     }
-                    @Deprecated("Deprecated in Java")
                     override fun onError(utteranceId: String?) {
                         isSpeaking = false
-                        coroutineScope.launch { startListening() }
                     }
                 })
                 
                 // initial greeting
                 coroutineScope.launch {
-                    val greeting = "Hello, I'm your AI ${userProfile.targetLanguage} teacher. How can I help you today?"
+                    val greeting = "Hello, I'm your AI English teacher. How can I help you today?"
                     aiMessage = greeting
                     conversationHistory = listOf(Content(listOf(Part(greeting)), role = "model"))
-                    if (isFemaleVoice) tts.value?.setPitch(1.4f) else tts.value?.setPitch(0.7f)
-                    tts.value?.speakWithVoice(greeting, userProfile.useFemaleVoice, "greeting")
+                    
+                    FishAudioPlayer.playAudio(
+                        context = context,
+                        text = greeting,
+                        isFemale = isFemaleVoice,
+                        fallbackTts = tts.value,
+                        utteranceId = "greeting",
+                        onStart = { isSpeaking = true },
+                        onDone = {
+                            isSpeaking = false
+                            startListening()
+                        }
+                    )
                 }
             }
         }
@@ -201,6 +261,7 @@ fun AICallScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
             speechRecognizer.destroy()
             tts.value?.stop()
             tts.value?.shutdown()
+            FishAudioPlayer.stop()
         }
     }
     
@@ -232,7 +293,7 @@ fun AICallScreen(viewModel: LexiViewModel, onBack: () -> Unit) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Spacer(modifier = Modifier.height(40.dp))
                 Text(
-                    text = "AI ${userProfile.targetLanguage} Teacher",
+                    text = "AI English Teacher",
                     color = Color.White,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold

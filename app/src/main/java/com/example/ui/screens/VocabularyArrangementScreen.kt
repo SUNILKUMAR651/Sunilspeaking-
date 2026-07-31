@@ -42,6 +42,8 @@ import kotlinx.coroutines.delay
 import android.speech.tts.TextToSpeech
 import com.example.utils.speakWithVoice
 import java.util.Locale
+import com.airbnb.lottie.compose.*
+import com.example.R
 import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,6 +83,20 @@ fun VocabularyArrangementScreen(
     var isDarkMode by remember { mutableStateOf(false) }
     
     val toneGen = remember { ToneGenerator(AudioManager.STREAM_MUSIC, 100) }
+    
+    var showSuccessAnimation by remember { mutableStateOf(false) }
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.heart))
+    val progress by animateLottieCompositionAsState(
+        composition,
+        isPlaying = showSuccessAnimation,
+        restartOnPlay = false
+    )
+    
+    LaunchedEffect(progress) {
+        if (progress == 1f) {
+            showSuccessAnimation = false
+        }
+    }
     DisposableEffect(Unit) {
         onDispose { toneGen.release() }
     }
@@ -131,6 +147,7 @@ fun VocabularyArrangementScreen(
             if (formedWord == currentWord.word.uppercase()) {
                 // Correct
                 if (soundEnabled) toneGen.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT, 150)
+                showSuccessAnimation = true
                 score += 10
                 delay(1000L)
                 if (currentIndex < practiceWords.size - 1) {
@@ -151,6 +168,7 @@ fun VocabularyArrangementScreen(
     val bgColor = if (isDarkMode) Color(0xFF1E1E1E) else Color(0xFFFAFAFA)
     val textColor = if (isDarkMode) Color.White else Color.Black
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -476,6 +494,20 @@ fun VocabularyArrangementScreen(
                 }
             }
         }
+    }
+    
+    if (showSuccessAnimation) {
+        Box(
+            modifier = Modifier.fillMaxSize().padding(bottom = 100.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            LottieAnimation(
+                composition = composition,
+                progress = { progress },
+                modifier = Modifier.size(250.dp)
+            )
+        }
+    }
     }
 }
 

@@ -19,6 +19,8 @@ data class UserProfile(
     var unlockedCertificates: List<String> = emptyList(),
     var certificationProgress: Float = 0f,
     var notificationsEnabled: Boolean = true,
+    var reminderHour: Int = 18,
+    var reminderMinute: Int = 0,
     var dailyGoalMinutes: Int = 15,
     var vocabularyHistory: List<Float> = listOf(20f, 45f, 55f, 80f, 120f, 150f, 210f),
     var lessonHistory: List<Float> = listOf(5f, 12f, 10f, 25f, 22f, 30f),

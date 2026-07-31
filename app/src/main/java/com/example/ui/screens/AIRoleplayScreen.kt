@@ -285,7 +285,25 @@ fun ActiveRoleplayScreen(scenario: RoleplayScenario, viewModel: LexiViewModel, o
         
         coroutineScope.launch {
             try {
-                val historyParts = newMessages.map { Content(listOf(Part(it.text)), role = if(it.isUser) "user" else "model") }
+                val collapsedMessages = mutableListOf<RoleplayMessage>()
+                for (msg in newMessages) {
+                    if (collapsedMessages.isEmpty()) {
+                        if (msg.isUser) {
+                            collapsedMessages.add(msg)
+                        }
+                    } else {
+                        val last = collapsedMessages.last()
+                        if (last.isUser == msg.isUser) {
+                            collapsedMessages[collapsedMessages.size - 1] = RoleplayMessage(last.text + "\n" + msg.text, last.isUser)
+                        } else {
+                            collapsedMessages.add(msg)
+                        }
+                    }
+                }
+                if (collapsedMessages.isEmpty()) {
+                    collapsedMessages.add(RoleplayMessage("Hello", true))
+                }
+                val historyParts = collapsedMessages.map { Content(listOf(Part(it.text)), role = if(it.isUser) "user" else "model") }
                 
                 val request = GenerateContentRequest(
                     contents = historyParts,

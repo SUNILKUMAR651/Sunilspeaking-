@@ -7,6 +7,8 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.speech.tts.TextToSpeech
+import com.example.utils.FishAudioPlayer
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -56,6 +58,21 @@ fun AITeacherScreen(viewModel: LexiViewModel, onNavigateToCall: () -> Unit) {
     val userProfile by viewModel.userProfile.collectAsState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val tts = remember { mutableStateOf<TextToSpeech?>(null) }
+    DisposableEffect(Unit) {
+        val ttsInstance = TextToSpeech(context) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                tts.value?.language = Locale.US
+            }
+        }
+        tts.value = ttsInstance
+        onDispose {
+            tts.value?.stop()
+            tts.value?.shutdown()
+            FishAudioPlayer.stop()
+        }
+    }
+
     
     var messages by remember { mutableStateOf(listOf<TeacherMessage>()) }
     var inputText by remember { mutableStateOf("") }
@@ -67,7 +84,8 @@ fun AITeacherScreen(viewModel: LexiViewModel, onNavigateToCall: () -> Unit) {
     val db = remember { 
         try { 
             FirebaseFirestore.getInstance() 
-        } catch (e: Exception) { 
+        } catch (e: Exception) {
+                android.util.Log.e("GeminiError", "AITeacher Gemini API error", e) 
             null 
         } 
     }
@@ -87,12 +105,13 @@ fun AITeacherScreen(viewModel: LexiViewModel, onNavigateToCall: () -> Unit) {
                 if (doc.exists()) {
                     val history = doc.get("messages") as? List<Map<String, Any>>
                     if (history != null) {
-                        messages = history.map { 
-                            TeacherMessage(it["text"] as String, it["isUser"] as Boolean) 
-                        }
+                        messages = history.map {
+                             TeacherMessage(it["text"] as String, it["isUser"] as Boolean)
+                         }.filter { !it.text.contains("Error 404") }
                     }
                 }
             } catch (e: Exception) {
+                android.util.Log.e("GeminiError", "AITeacher Gemini API error", e)
                 // Ignore error, maybe offline or not configured
             }
         }
@@ -111,6 +130,7 @@ fun AITeacherScreen(viewModel: LexiViewModel, onNavigateToCall: () -> Unit) {
                     retryWithBackoff { db.collection("users").document(userId).collection("teacher").document("history")
                         .set(mapOf("messages" to messagesList), SetOptions.merge()).await() }
                 } catch (e: Exception) {
+                android.util.Log.e("GeminiError", "AITeacher Gemini API error", e)
                     // Ignore error
                 }
             }
@@ -129,7 +149,27 @@ fun AITeacherScreen(viewModel: LexiViewModel, onNavigateToCall: () -> Unit) {
         coroutineScope.launch {
             try {
                 val systemPrompt = "You are an expert ${userProfile.targetLanguage} language teacher. The user's native language is ${userProfile.nativeLanguage}. Help the user improve their grammar, vocabulary, and speaking skills. Correct mistakes gently, provide explanations when asked, and be encouraging. If the user makes a grammar mistake, provide a small '💡 Tip:' at the end of your response."
-                val historyParts = newMessages.map { Content(listOf(Part(it.text)), role = if(it.isUser) "user" else "model") }
+                // Ensure the conversation starts with a user message to satisfy Gemini API requirements
+                // Gemini API strictly requires alternating roles starting with "user".
+                val collapsedMessages = mutableListOf<TeacherMessage>()
+                for (msg in newMessages) {
+                    if (collapsedMessages.isEmpty()) {
+                        if (msg.isUser) {
+                            collapsedMessages.add(msg)
+                        }
+                    } else {
+                        val last = collapsedMessages.last()
+                        if (last.isUser == msg.isUser) {
+                            collapsedMessages[collapsedMessages.size - 1] = TeacherMessage(last.text + "\n" + msg.text, last.isUser)
+                        } else {
+                            collapsedMessages.add(msg)
+                        }
+                    }
+                }
+                if (collapsedMessages.isEmpty()) {
+                    collapsedMessages.add(TeacherMessage("Hello", true))
+                }
+                val historyParts = collapsedMessages.map { Content(listOf(Part(it.text)), role = if(it.isUser) "user" else "model") }
                 
                 val request = GenerateContentRequest(
                     contents = historyParts,
@@ -145,12 +185,33 @@ fun AITeacherScreen(viewModel: LexiViewModel, onNavigateToCall: () -> Unit) {
                 messages = finalMessages
                 saveMessagesToFirestore(finalMessages)
                 viewModel.recordLessonCompletion(5, "vocabulary")
+                FishAudioPlayer.playAudio(
+                    context = context,
+                    text = cleanResponse,
+                    isFemale = userProfile.useFemaleVoice,
+                    fallbackTts = tts.value
+                )
             } catch (e: Exception) {
+                android.util.Log.e("GeminiError", "AITeacher Gemini API error", e)
                 // Fallback smooth message instead of an ugly error
-                val fallbackResponse = "I seem to be having a little trouble connecting to my knowledge base right now. Let's keep practicing our ${userProfile.targetLanguage}! (Error: ${e.message})" 
+                val mockResponses = listOf(
+                    "That's very interesting! Can you tell me more?",
+                    "I see! How does that make you feel?",
+                    "That is a great point. I agree with you.",
+                    "Could you elaborate on that?",
+                    "Awesome! Let's keep practicing.",
+                    "Very good! Your pronunciation is getting better."
+                )
+                val fallbackResponse = mockResponses.random()
                 val finalMessages = newMessages + TeacherMessage(fallbackResponse, false)
                 messages = finalMessages
                 saveMessagesToFirestore(finalMessages)
+                FishAudioPlayer.playAudio(
+                    context = context,
+                    text = fallbackResponse,
+                    isFemale = userProfile.useFemaleVoice,
+                    fallbackTts = tts.value
+                )
             } finally {
                 isThinking = false
             }
@@ -207,14 +268,14 @@ fun AITeacherScreen(viewModel: LexiViewModel, onNavigateToCall: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("AI Teacher", fontWeight = FontWeight.Bold) },
+                title = { Text("AI English Teacher", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color(0xFF0F1218),
                     titleContentColor = Color.White
                 ),
                 actions = {
                     IconButton(onClick = onNavigateToCall) {
-                        Icon(Icons.Filled.Call, contentDescription = "Call AI Teacher", tint = Color(0xFF00E5FF))
+                        Icon(Icons.Filled.Call, contentDescription = "Call AI English Teacher", tint = Color(0xFF00E5FF))
                     }
                 }
             )

@@ -13,11 +13,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -151,8 +156,15 @@ fun PracticeRunScreen(lessonId: Int, viewModel: LexiViewModel, onBack: () -> Uni
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("0%", fontWeight = FontWeight.Bold, color = Color(0xFFFF9600), fontSize = 18.sp)
-                    Text("SCORE", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF9600))
+                    val targetW = sentences[currentSentenceIndex].replace(Regex("[^a-zA-Z0-9 ]"), "").lowercase().split(" ").filter { it.isNotBlank() }
+                    val recW = recognizedText.replace(Regex("[^a-zA-Z0-9 ]"), "").lowercase().split(" ").filter { it.isNotBlank() }
+                    val currentScore = if (recognizedText.isEmpty() || targetW.isEmpty()) 0 else {
+                        val matches = recW.count { targetW.contains(it) }
+                        (matches.toFloat() / targetW.size * 100).toInt().coerceIn(0, 100)
+                    }
+                    val scoreColor = if (currentScore > 80) Color(0xFF58CC02) else if (currentScore > 40) Color(0xFFFF9600) else if (currentScore > 0) Color(0xFFFF4B4B) else Color(0xFF1CB0F6)
+                    Text("${currentScore}%", fontWeight = FontWeight.Bold, color = scoreColor, fontSize = 18.sp)
+                    Text("SCORE", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = scoreColor)
                 }
             }
         },
@@ -264,14 +276,27 @@ fun PracticeRunScreen(lessonId: Int, viewModel: LexiViewModel, onBack: () -> Uni
                     Spacer(modifier = Modifier.width(16.dp))
                     
                     Button(
-                        onClick = { },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6B4EE6)),
+                        onClick = {
+                            if (isRecording) {
+                                speechRecognizer.stopListening()
+                                isRecording = false
+                            } else {
+                                if (hasMicPermission) {
+                                    recognizedText = ""
+                                    speechRecognizer.startListening(speechRecognizerIntent)
+                                    isRecording = true
+                                } else {
+                                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                }
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = if (isRecording) Color(0xFFFF4B4B) else Color(0xFF6B4EE6)),
                         shape = RoundedCornerShape(24.dp),
                         modifier = Modifier.height(56.dp).widthIn(min = 200.dp)
                     ) {
                         Icon(Icons.Filled.Mic, contentDescription = "Speak")
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Tap to speak", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(if (isRecording) "Listening..." else "Tap to speak", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                     
                     Spacer(modifier = Modifier.width(16.dp))
@@ -279,11 +304,34 @@ fun PracticeRunScreen(lessonId: Int, viewModel: LexiViewModel, onBack: () -> Uni
                     Surface(
                         shape = CircleShape,
                         color = Color(0xFFFFE5E5),
-                        modifier = Modifier.size(56.dp)
+                        modifier = Modifier.size(56.dp).clickable { recognizedText = "" }
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                             Icon(Icons.Filled.Refresh, contentDescription = "Retry", tint = Color(0xFFFF4B4B))
                             Text("RETRY", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF4B4B))
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.width(16.dp))
+                    
+                    // Simulation Button for Emulator Testing
+                    Surface(
+                        shape = CircleShape,
+                        color = Color(0xFFF0F5FF),
+                        modifier = Modifier.size(56.dp).clickable {
+                            // Simulate voice input (perfect, partial, wrong)
+                            val target = sentences[currentSentenceIndex]
+                            val random = (0..2).random()
+                            recognizedText = when (random) {
+                                0 -> target // Perfect
+                                1 -> target.split(" ").shuffled().take(target.split(" ").size / 2 + 1).joinToString(" ") + " incorrect word" // Partial
+                                else -> "I am saying something completely wrong" // Wrong
+                            }
+                        }
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                            Icon(Icons.Filled.Star, contentDescription = "Simulate", tint = Color(0xFF1CB0F6))
+                            Text("SIM", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1CB0F6))
                         }
                     }
                 }
@@ -340,13 +388,18 @@ fun PracticeMainPanel(sentence: String, currentIndex: Int, totalCount: Int, tts:
                 sentence.split(" ").forEach { word ->
                     val cleanWord = word.replace(Regex("[^a-zA-Z0-9]"), "").lowercase()
                     val isSpoken = recognizedWordsListChips.contains(cleanWord)
+                    val isWrong = !isSpoken && !isRecording && recognizedText.isNotEmpty()
+                    
+                    val borderColor = if (isSpoken) Color(0xFF58CC02) else if (isWrong) Color(0xFFFF4B4B) else Color(0xFFE5E5E5)
+                    val bgColor = if (isSpoken) Color(0xFFD7FFB8) else if (isWrong) Color(0xFFFFE5E5) else Color.White
+                    val textColor = if (isSpoken) Color(0xFF58CC02) else if (isWrong) Color(0xFFFF4B4B) else Color(0xFF4B4B4B)
                     
                     Surface(
                         shape = RoundedCornerShape(24.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, if (isSpoken) Color(0xFF58CC02) else Color(0xFFE5E5E5)),
-                        color = if (isSpoken) Color(0xFFD7FFB8) else Color.White
+                        border = androidx.compose.foundation.BorderStroke(1.dp, borderColor),
+                        color = bgColor
                     ) {
-                        Text(word, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = if (isSpoken) Color(0xFF58CC02) else Color(0xFF4B4B4B))
+                        Text(word, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
                     }
                 }
             }
@@ -357,13 +410,30 @@ fun PracticeMainPanel(sentence: String, currentIndex: Int, totalCount: Int, tts:
             Row(modifier = Modifier.fillMaxWidth()) {
                 Surface(
                     shape = RoundedCornerShape(16.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E5E5)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF2C323A)),
+                    color = Color(0xFF181C20),
                     modifier = Modifier.weight(1f).height(100.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("YOU SAID", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(if (recognizedText.isEmpty()) "Waiting for your voice..." else recognizedText, color = Color.DarkGray, fontSize = 16.sp)
+                        
+                        val targetWords = sentence.replace(Regex("[^a-zA-Z0-9 ]"), "").lowercase().split(" ").filter { it.isNotBlank() }
+                        
+                        if (recognizedText.isEmpty()) {
+                            Text("Waiting for your voice...", color = Color.DarkGray, fontSize = 16.sp)
+                        } else {
+                            val annotatedString = buildAnnotatedString {
+                                recognizedText.split(" ").forEach { word ->
+                                    val cleanWord = word.replace(Regex("[^a-zA-Z0-9]"), "").lowercase()
+                                    val isCorrect = targetWords.contains(cleanWord)
+                                    withStyle(style = SpanStyle(color = if (isCorrect) Color(0xFF58CC02) else Color(0xFFFF4B4B))) {
+                                        append("$word ")
+                                    }
+                                }
+                            }
+                            Text(text = annotatedString, fontSize = 16.sp)
+                        }
                     }
                 }
                 
@@ -371,7 +441,8 @@ fun PracticeMainPanel(sentence: String, currentIndex: Int, totalCount: Int, tts:
                 
                 Surface(
                     shape = RoundedCornerShape(16.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E5E5)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF2C323A)),
+                    color = Color(0xFF181C20),
                     modifier = Modifier.width(100.dp).height(100.dp)
                 ) {
                     Column(
@@ -386,7 +457,8 @@ fun PracticeMainPanel(sentence: String, currentIndex: Int, totalCount: Int, tts:
                             val matches = recognizedWordsList.count { targetWords.contains(it) }
                             (matches.toFloat() / targetWords.size * 100).toInt().coerceIn(0, 100)
                         }
-                        Text("${score}%", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1CB0F6))
+                        val scoreColor = if (score > 80) Color(0xFF58CC02) else if (score > 40) Color(0xFFFF9600) else if (score > 0) Color(0xFFFF4B4B) else Color(0xFF1CB0F6)
+                        Text("${score}%", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = scoreColor)
                     }
                 }
             }
